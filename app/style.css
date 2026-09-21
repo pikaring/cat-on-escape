@@ -211,55 +211,64 @@ body {
 /* ========== どうぐ（ねこじゃらし・けいとだま・すず） ========== */
 .cat--item { z-index: 2; }
 
-.cat--item .cat__body {
-  box-shadow: 0 0 0 4px var(--c-accent), 0 0 14px rgba(255, 227, 110, .95);
+/* どうぐに なった マスは、ねこの かおを 出さずに どうぐだけを みせる */
+.cat--item .cat__body { display: none; }
+
+/* うしろの ひかり（どうぐが ここに ある という しるし） */
+.cat--item::before {
+  content: "";
+  position: absolute;
+  inset: 4%;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(255, 227, 110, .95) 0%,
+    rgba(255, 227, 110, .6) 56%,
+    rgba(255, 227, 110, 0) 74%);
   animation: tool-pulse 1.8s ease-in-out infinite;
 }
 
+.cat--item.is-selected::before { box-shadow: 0 0 0 5px var(--c-again); }
+
 @keyframes tool-pulse {
-  0%, 100% { box-shadow: 0 0 0 4px var(--c-accent), 0 0 10px rgba(255, 227, 110, .7); }
-  50%      { box-shadow: 0 0 0 5px var(--c-accent), 0 0 20px rgba(255, 227, 110, 1); }
+  0%, 100% { transform: scale(.92); opacity: .8; }
+  50%      { transform: scale(1.06); opacity: 1; }
 }
 
-/* もっている どうぐの しるし。絵が できたら ITEMS の image で 画像に さしかわる。 */
+/* どうぐの 絵。ITEMS の image が よみこめない ときは 絵文字で 出る。 */
 .cat__tool {
   position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 46%;
-  height: 46%;
+  inset: 6%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: calc(var(--cell) * .24);
+  font-size: calc(var(--cell) * .5);
   line-height: 1;
-  background-color: #ffffff;
-  background-size: 74%;
+  background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
-  border: 2px solid var(--c-header);
-  border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, .3);
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .35));
   pointer-events: none;
 }
 
 .cat__tool--col { transform: rotate(-90deg); }   /* 絵文字の ねこじゃらしを たてに */
 
-/* 画像が よみこめた ときは、白い丸を やめて 絵を 大きく みせる
-   （マスから すこし はみ出させて、小さい画面でも 何の どうぐか 分かるように） */
 .cat__tool--image {
-  color: transparent;
-  width: 76%;
-  height: 76%;
-  right: -12%;
-  bottom: -6%;
-  background-color: transparent;
-  background-size: contain;
-  border: 0;
+  color: transparent;                             /* 絵文字は かくす */
+  transform: none;                                /* たて向きの絵は 画像そのものが たて向き */
+}
+
+/* にげて いく どうぐ（はしって いく すがた） */
+.cat__body--tool {
+  background-color: transparent !important;
+  border: 0 !important;
   box-shadow: none;
-  /* 白いふちで ねこの顔から うかせる（ほそい ねこじゃらしでも 見える） */
-  filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 4px #fff) drop-shadow(0 2px 3px rgba(0, 0, 0, .45));
-  transform: none;      /* たて向きの絵は 画像そのものが たて向き */
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 60%;
 }
 
 /* どうぐが はたらいた ところの ひかり */

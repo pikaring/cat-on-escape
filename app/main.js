@@ -8,7 +8,9 @@
  *       たてに4  → ねこじゃらし（たて）：たて一れつを にがす
  *       5ひき以上 → けいとだま：まわり3×3を にがす
  *       たてよこが交わる → すず：ななめクロスを にがす
- *   - どうぐは、となりの ねこが にげると いっしょに はたらく（どうぐ同士で つながる）
+ *   - どうぐに なった マスは ねこの かおが 消えて、どうぐだけに なる（ねことしては そろわない）
+ *   - どうぐは となりの ねこと いれかえると つかえる。
+ *     となりの ねこが にげた ときにも いっしょに はたらく（どうぐ同士で つながる）
  *   - あいた ところには 上から あたらしい ねこが ふってくる（れんさ あり）
  *
  * ねこの 絵の さしかえ
@@ -184,7 +186,7 @@
         tile.badge.textContent = def.icon;
         tile.badge.style.backgroundImage = '';
       }
-      tile.el.setAttribute('aria-label', CAT_TYPES[tile.type].name + '（' + def.name + '）');
+      tile.el.setAttribute('aria-label', def.name);
     } else {
       if (tile.badge) { tile.badge.remove(); tile.badge = null; }
       tile.el.setAttribute('aria-label', CAT_TYPES[tile.type].name);
@@ -208,7 +210,14 @@
   /* ---------------- ばんめんの はんてい ---------------- */
 
   function typeGrid() {
-    return grid.map((row) => row.map((tile) => (tile ? tile.type : -1)));
+    // どうぐに なった マスは ねこの かおが 消えているので、そろいの はんていから 外す
+    return grid.map((row) => row.map((tile) => (tile && !tile.item ? tile.type : -1)));
+  }
+
+  function anyItem() {
+    let found = false;
+    eachTile((tile) => { if (tile.item) found = true; });
+    return found;
   }
 
   /** たて・よこに MIN_MATCH いじょう つながった ならびを かえす */
@@ -522,7 +531,17 @@
       runner.style.animationDelay = (i * RUN_STAGGER) + 'ms';
 
       const body = document.createElement('div');
-      dressBody(body, tile.type);
+      if (tile.item) {
+        const def = ITEMS[tile.item];
+        body.className = 'cat__body cat__body--tool';
+        if (def.image && def.ready) {
+          body.style.backgroundImage = 'url("' + def.image + '")';
+        } else {
+          body.textContent = def.icon;
+        }
+      } else {
+        dressBody(body, tile.type);
+      }
       runner.appendChild(body);
 
       runwayEl.appendChild(runner);
@@ -555,6 +574,69 @@
     }
   }
 
+  /** ひかり → てんすう → ねこが はしる → どうぐを のこす、までを まとめて やる */
+  async function runEscape(escaping, used, newItems, chain) {
+    used.forEach((u) => blast(u.kind, u.r, u.c));
+
+    const tiles = [...escaping].map((k) => tileAtKey(k)).filter(Boolean);
+    score += (tiles.length * 10 + newItems.length * 50) * chain;
+    updateHud();
+
+    if (used.length) {
+      const what = [...new Set(used.map((u) => ITEMS[u.kind].what))].join('と');
+      say(what + 'が にげた！');
+    } else if (newItems.length) {
+      say(ITEMS[newItems[0].kind].name + 'に なった！');
+    } else {
+      say(tiles.length + 'ひき 右へ にげていった！');
+    }
+    if (chain >= 2) bignews(chain + 'れんさ！');
+
+    if (used.length) await sleep(BLAST_MS * 0.5);
+
+    escapeRight(tiles);
+    tiles.forEach((tile) => {
+      grid[tile.r][tile.c] = null;
+      tile.el.remove();
+    });
+
+    // のこした マスを どうぐに する（ねこの かおは 消えて どうぐだけに なる）
+    newItems.forEach((item) => {
+      const tile = tileAtKey(item.at);
+      if (!tile) return;
+      tile.item = item.kind;
+      paint(tile);
+      tile.el.animate(
+        [{ transform: tile.el.style.transform + ' scale(1)' },
+         { transform: tile.el.style.transform + ' scale(1.3)' },
+         { transform: tile.el.style.transform + ' scale(1)' }],
+        { duration: 340, easing: 'ease-out' }
+      );
+    });
+
+    return tiles.length;
+  }
+
+  /** どうぐを つかう（となりの ねこと いれかえると はたらく） */
+  async function useItem(item, other) {
+    busy = true;
+    selectTile(null);
+
+    swapTiles(item, other);
+    await sleep(SWAP_MS);
+    moves++;
+    updateHud();
+
+    const { escaping, used } = spreadEscape([key(item.r, item.c)], new Set());
+    await runEscape(escaping, used, [], 1);
+    await sleep(ESCAPE_HOLD);
+    collapseAndRefill();
+    await sleep(FALL_MS + 60);
+
+    await resolveBoard();   // おちてきた ねこで そろえば れんさ
+    busy = false;
+  }
+
   /** そろい → どうぐ → にげる → おちる を れんさが とまるまで くりかえす */
   async function resolveBoard() {
     let chain = 0;
@@ -576,45 +658,7 @@
       const keepCells = new Set(newItems.map((item) => item.at));
       const { escaping, used } = spreadEscape([...matched], keepCells);
 
-      // どうぐの ひかり → ねこが はしる
-      used.forEach((u) => blast(u.kind, u.r, u.c));
-
-      const tiles = [...escaping].map((k) => tileAtKey(k)).filter(Boolean);
-      score += (tiles.length * 10 + newItems.length * 50) * chain;
-      updateHud();
-
-      if (used.length) {
-        const what = [...new Set(used.map((u) => ITEMS[u.kind].what))].join('と');
-        say(what + 'が にげた！');
-      } else if (newItems.length) {
-        say(ITEMS[newItems[0].kind].name + 'を てにいれた！');
-      } else {
-        say(tiles.length + 'ひき 右へ にげていった！');
-      }
-      if (chain >= 2) bignews(chain + 'れんさ！');
-
-      if (used.length) await sleep(BLAST_MS * 0.5);
-
-      escapeRight(tiles);
-      tiles.forEach((tile) => {
-        grid[tile.r][tile.c] = null;
-        tile.el.remove();
-      });
-
-      // のこした マスを どうぐに する
-      newItems.forEach((item) => {
-        const tile = tileAtKey(item.at);
-        if (!tile) return;
-        tile.item = item.kind;
-        paint(tile);
-        tile.el.animate(
-          [{ transform: tile.el.style.transform + ' scale(1)' },
-           { transform: tile.el.style.transform + ' scale(1.25)' },
-           { transform: tile.el.style.transform + ' scale(1)' }],
-          { duration: 320, easing: 'ease-out' }
-        );
-      });
-
+      await runEscape(escaping, used, newItems, chain);
       await sleep(ESCAPE_HOLD);
       collapseAndRefill();
       await sleep(FALL_MS + 60);
@@ -623,7 +667,7 @@
     if (chain >= 2) say(chain + 'れんさ！ すごいニャ');
     else if (chain === 1 && !messageEl.textContent.includes('てにいれた')) say('にげられたニャ〜');
 
-    if (!hasMove(typeGrid())) await reshuffle();
+    if (!hasMove(typeGrid()) && !anyItem()) await reshuffle();
   }
 
   /** てづまりに なったら ならびなおす */
@@ -674,6 +718,11 @@
 
   async function trySwap(a, b) {
     if (busy || !a || !b || !isNeighbor(a, b)) return;
+
+    // どうぐは そろえなくても、となりの ねこと いれかえるだけで はたらく
+    if (a.item) return useItem(a, b);
+    if (b.item) return useItem(b, a);
+
     busy = true;
     selectTile(null);
 
