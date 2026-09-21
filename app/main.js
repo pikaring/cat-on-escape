@@ -30,10 +30,10 @@
    *  ならびは 前作「ねこの ともだち」の ねこに あわせてある。 */
   const CAT_TYPES = [
     { key: 'kuro',      name: 'くろねこ', image: 'images/face-kuro.png' },
-    { key: 'chashiro',  name: 'ちゃしろ', image: null },
-    { key: 'kijitora',  name: 'キジトラ', image: null },
-    { key: 'hachiware', name: 'ハチワレ', image: null },
-    { key: 'mike',      name: 'みけねこ', image: null },
+    { key: 'chashiro',  name: 'ちゃしろ', image: 'images/face-chashiro.png' },
+    { key: 'kijitora',  name: 'キジトラ', image: 'images/face-kijitora.png' },
+    { key: 'hachiware', name: 'ハチワレ', image: 'images/face-hachiware.png' },
+    { key: 'mike',      name: 'みけねこ', image: 'images/face-mike.png' },
   ];
 
   const boardEl    = document.getElementById('board');

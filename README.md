@@ -23,7 +23,7 @@
 | `app/style.css` | 大きなUI・高コントラスト・アニメーション |
 | `app/main.js` | ゲームロジック・そろい判定・落下・連鎖・LocalStorage |
 | `app/manifest.json` | ホーム画面に追加したときの設定（PWA） |
-| `app/images/face-*.png` | 猫の顔の画像（くろねこのみ差し替えずみ） |
+| `app/images/face-*.png` | 猫の顔の画像5種（くろねこ・ちゃしろ・キジトラ・ハチワレ・みけねこ） |
 | `tools/make_face.py` | 生成AIが出した顔の画像を、背景除去＋正方形＋512pxに整える |
 | `docs/asset-prompts.md` | 猫の顔を画像生成AIで作るときのプロンプト |
 
@@ -41,7 +41,8 @@
 
 ## 猫の絵の差し替え
 
-暫定の丸（黒丸・白丸）は仮の表示です。画像ができたら2ステップで差し替えられます。
+5種類とも差し替えずみです（Gemini で生成 → `tools/make_face.py` で背景除去・512px化）。
+描き直すときも手順は同じです。
 
 1. 生成した画像を `tools/make_face.py` に通す（背景除去・正方形・512px化）。
    ```
@@ -52,7 +53,7 @@
 
 ```js
 const CAT_TYPES = [
-  { key: 'kuro',      name: 'くろねこ', image: 'images/face-kuro.png' },  // 差し替えずみ
+  { key: 'kuro',      name: 'くろねこ', image: 'images/face-kuro.png' },
   { key: 'chashiro',  name: 'ちゃしろ', image: 'images/face-chashiro.png' },
   { key: 'kijitora',  name: 'キジトラ', image: 'images/face-kijitora.png' },
   { key: 'hachiware', name: 'ハチワレ', image: 'images/face-hachiware.png' },
@@ -60,7 +61,7 @@ const CAT_TYPES = [
 ];
 ```
 
-- 画像は読み込みに成功したときだけ使われます。パスを間違えても、その種類だけ丸のまま遊べます。
+- 画像は読み込みに成功したときだけ使われます。パスを間違えても、その種類だけ暫定の丸で遊べます。
 - 1種類ずつ順に差し替えても崩れません。
 - 3×3のスプライトシート（前作と同じ形式）を使うときは `sheet: true` を足すと左上のコマだけを表示します。
 - 画像生成AI（Gemini）用のプロンプトは `docs/asset-prompts.md` にあります。5匹の画風をそろえる手順つき。

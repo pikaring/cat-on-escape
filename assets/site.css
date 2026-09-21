@@ -301,24 +301,27 @@ details p { margin-top: 12px; font-size: 15px; padding-left: 24px; }
 .sdot {
   width: 100%;
   aspect-ratio: 1 / 1;
-  border-radius: 50%;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
-.sdot.k { background: #23201d; border: 2px solid #100e0c; }
-.sdot.c { background: #fdfbf7; border: 2px solid #b9ab97; }
-.sdot.t { background: #9a9186; border: 2px solid #6f6960; }
-.sdot.h { background: #fdfbf7; border: 5px solid #23201d; }
+.sdot.k { background-image: url("../app/images/face-kuro.png"); }
+.sdot.c { background-image: url("../app/images/face-chashiro.png"); }
+.sdot.t { background-image: url("../app/images/face-kijitora.png"); }
+.sdot.h { background-image: url("../app/images/face-hachiware.png"); }
 
 /* 右へ はしって にげる ねこ */
 .srunner {
   position: absolute;
   top: 44%;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #fdfbf7;
-  border: 5px solid #23201d;
-  box-shadow: 0 5px 4px rgba(0, 0, 0, .34);
+  width: 34px;
+  height: 34px;
+  background-image: url("../app/images/face-hachiware.png");
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 5px 4px rgba(0, 0, 0, .34));
 }
 
 .srunner--a { right: 30%; transform: rotate(-7deg); }
