@@ -33,13 +33,8 @@ TOLERANCE = 26    # 背景とみなす色の近さ（大きいほど よく抜�
 MIN_PART = 0.004  # これより小さい かたまりは ゴミとみなす（画像全体に対する面積の割合）
 
 
-def background_alpha(path):
-    """外周とつながっている背景色の画素だけを透明にした RGBA を返す。"""
-    img = Image.open(path).convert('RGB')
-    rgb = np.asarray(img).astype(np.int16)
-    h, w, _ = rgb.shape
-
-    # 背景の色は画像の外周から採る（白ベタとはかぎらないため）
+def bg_mask(rgb):
+    """画像の外周から背景色を採り、それに近い画素をしるしする。"""
     ring = np.concatenate([
         rgb[:2].reshape(-1, 3), rgb[-2:].reshape(-1, 3),
         rgb[:, :2].reshape(-1, 3), rgb[:, -2:].reshape(-1, 3)])
@@ -48,9 +43,59 @@ def background_alpha(path):
     if not bg_colors:                      # 外周が一色にまとまらないときは白とみなす
         bg_colors = [np.array([255, 255, 255])]
 
-    near_bg = np.zeros((h, w), bool)
+    near_bg = np.zeros(rgb.shape[:2], bool)
     for color in bg_colors:
         near_bg |= (np.abs(rgb - color).max(axis=2) <= TOLERANCE)
+    return near_bg
+
+
+def unframe(img):
+    """絵のまわりに かざり枠が 描かれて しまった ときは、枠の 内側だけを 切り出す。
+    （枠の 内がわの 白は 外と つながっていないので、そのままでは 抜けない）"""
+    rgb = np.asarray(img).astype(np.int16)
+    near_bg = bg_mask(rgb)
+    h, w = near_bg.shape
+
+    # 中身の ある ところの わく
+    ys, xs = np.where(~near_bg)
+    if not len(ys):
+        return img
+    top, bottom, left, right = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
+    inner = ~near_bg[top:bottom, left:right]
+    if inner.shape[0] < 8 or inner.shape[1] < 8:
+        return img
+
+    # わくの ふちが ぐるりと うまっていたら 「枠」とみなす
+    edge = np.concatenate([inner[0], inner[-1], inner[:, 0], inner[:, -1]])
+    if edge.mean() < 0.9:
+        return img
+
+    def inside(line):
+        """外から 内へ すすみ、背景 → 枠 → 背景 と かわる ところを さがす。"""
+        i = 0
+        while i < len(line) and line[i] > 0.7:   # 枠の そとの 余白
+            i += 1
+        while i < len(line) and line[i] <= 0.7:  # 枠そのもの
+            i += 1
+        return i
+
+    rows_bg = near_bg.mean(axis=1)
+    cols_bg = near_bg.mean(axis=0)
+    t = inside(rows_bg)
+    b = h - inside(rows_bg[::-1])
+    l = inside(cols_bg)
+    r = w - inside(cols_bg[::-1])
+    if b - t < h * 0.3 or r - l < w * 0.3:
+        return img
+    return img.crop((l, t, r, b))
+
+
+def background_alpha(path):
+    """外周とつながっている背景色の画素だけを透明にした RGBA を返す。"""
+    img = unframe(Image.open(path).convert('RGB'))
+    rgb = np.asarray(img).astype(np.int16)
+    h, w, _ = rgb.shape
+    near_bg = bg_mask(rgb)
 
     # 外周から届く背景だけを塗りつぶす（目のハイライトなど、囲まれた白は残す）
     reached = np.zeros((h, w), bool)

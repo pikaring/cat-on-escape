@@ -47,10 +47,10 @@
 
   /** どうぐ。icon は 絵が できるまでの ざんてい（image に パスを いれると 画像に なる）。 */
   const ITEMS = {
-    row:   { name: 'ねこじゃらし（よこ）', icon: '🪶', what: 'よこ一れつ',  image: null },
-    col:   { name: 'ねこじゃらし（たて）', icon: '🪶', what: 'たて一れつ',  image: null },
-    bomb:  { name: 'けいとだま',           icon: '🧶', what: 'まわり3×3',  image: null },
-    cross: { name: 'すず',                 icon: '🔔', what: 'ななめクロス', image: null },
+    row:   { name: 'ねこじゃらし（よこ）', icon: '🪶', what: 'よこ一れつ',  image: 'images/tool-row.png' },
+    col:   { name: 'ねこじゃらし（たて）', icon: '🪶', what: 'たて一れつ',  image: 'images/tool-col.png' },
+    bomb:  { name: 'けいとだま',           icon: '🧶', what: 'まわり3×3',  image: 'images/tool-bomb.png' },
+    cross: { name: 'すず',                 icon: '🔔', what: 'ななめクロス', image: 'images/tool-cross.png' },
   };
 
   const boardEl    = document.getElementById('board');

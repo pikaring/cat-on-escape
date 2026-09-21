@@ -25,7 +25,7 @@
 | `app/main.js` | ゲームロジック・そろい判定・落下・連鎖・LocalStorage |
 | `app/manifest.json` | ホーム画面に追加したときの設定（PWA） |
 | `app/images/face-*.png` | 猫の顔の画像5種（くろねこ・ちゃしろ・キジトラ・ハチワレ・みけねこ） |
-| `app/images/tool-*.png` | どうぐの画像4種（まだ無し。いまは絵文字で表示） |
+| `app/images/tool-*.png` | どうぐの画像4種（ねこじゃらし よこ／たて・けいとだま・すず） |
 | `tools/make_face.py` | 生成AIが出した顔の画像を、背景除去＋グリッドの切り分け＋正方形＋512pxに整える |
 | `docs/asset-prompts.md` | 猫の顔を画像生成AIで作るときのプロンプト |
 
