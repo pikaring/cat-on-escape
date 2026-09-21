@@ -11,7 +11,7 @@ ride-on-qc / eat-on-gpx / rock-on-mj / cat-on-escape）は、**見た目も 作�
 | --- | --- |
 | デザイン | `assets/site.css`（4サイト共通。アクセント色だけ 変える） |
 | 節の ならび | `hero` → `specs` → `goods`（本・グッズ）→ 中身の節 → `faq` → `cta` → `family` → `footer` |
-| ポータルへの リンク | `family` の節に 1つだけ（`https://pikaring.github.io/portal/`） |
+| ポータルへの リンク | `family` の節に 1つだけ（`https://pikaring.github.io/`。`/portal/` は 引っこし後の 転送ページ） |
 | アクセスカウンター | フッターに `<span class="counter">累計アクセス <b id="counter-value">―</b> 回</span>` と GAS を 呼ぶ script |
 | アソシエイトの 表示 | フッターに `<span class="disclosure">…</span>` |
 | フッター | `GitHub` / `README` / `MIT License · pikaring · 依存ライブラリなし` |
@@ -42,6 +42,9 @@ ride-on-qc / eat-on-gpx / rock-on-mj / cat-on-escape）は、**見た目も 作�
 | JSON-LD | `<head>` の 末尾に 1つ。ゲームは `WebApplication` + `GameApplication`、道具は `UtilitiesApplication`、rock-on-mj は `SoftwareApplication`（Windows）、ポータルは `CollectionPage` + `ItemList` |
 | `description` | 探すときの ことば（例：脳トレ／クイズ／議事録）を 入れる。JSON-LD の `description` と 同じ 文にする |
 
+- 一覧（ポータル）は **`pikaring.github.io` リポジトリの 根**。`pikaring/portal` は canonical と
+  meta refresh で 根へ 送る だけの 転送ページ（GitHub Pages は 301 を 返せない）。
+  `portal/assets/` は 消さない ―― 古い リンクの 画像が 切れる
 - `robots.txt` は **`pikaring.github.io` リポジトリの 根に 1つだけ**。
   `/portal/robots.txt` のような 下の 階層に 置いても クローラーは 読まない。
   サイトを 増やしたら そこの `Sitemap:` 行を 足す
