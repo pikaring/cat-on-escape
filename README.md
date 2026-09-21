@@ -28,6 +28,8 @@
 | `app/images/foe-*.png` | じゃまものの画像2種（いぬ・おおかみ） |
 | `tools/make_face.py` | 生成AIが出した顔の画像を、背景除去＋グリッドの切り分け＋正方形＋512pxに整える |
 | `tools/make_icons.py` | 猫の顔からアプリのアイコン一式をつくる |
+| `tools/fetch_goods.py` | 紹介ページの本・グッズの画像と価格を Amazon Creators API で取り直す（ほかのサイトと同じもの） |
+| `.github/workflows/goods.yml` | 上を毎日3時（JST）に実行して `assets/goods.json` を更新する |
 | `docs/asset-prompts.md` | 猫の顔を画像生成AIで作るときのプロンプト |
 
 ## 遊びかた
@@ -124,3 +126,14 @@ const CAT_TYPES = [
 ## ライセンス
 
 MIT License
+
+## 紹介ページの 本・グッズ（Amazonアソシエイト）
+
+`index.html` の `<div class="good" data-asin="...">` が商品カードです。ほかのサイト
+（reach-on-sanma など）と同じ形式で、リンクは `https://www.amazon.co.jp/dp/ASIN?tag=redcomet-22`。
+
+画像と価格は `assets/goods.json` から後付けで差し込みます（無ければテキストのまま表示）。
+生成は `tools/fetch_goods.py`、毎日の更新は `.github/workflows/goods.yml` が担当します。
+
+動かすには、リポジトリの Settings → Secrets and variables → Actions に
+`CREATORS_CLIENT_ID` と `CREATORS_CLIENT_SECRET` を登録してください。

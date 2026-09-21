@@ -216,12 +216,12 @@
     </div>
     <div class="goods-grid">
 
-      <div class="good">
+      <div class="good" data-asin="B0DR89S4JV">
         <p class="gcat">グッズ</p>
         <h3>どこでもいっしょ トロ アクリルつままれ</h3>
         <p>コスパの 公式グッズ。ソニーの 白い猫「トロ」を、耳を つままれた かっこうに した アクリルの キーホルダーです。
           ポケットステーションの 頃から、ことばを 教えて いっしょに 過ごした 相棒。</p>
-        <a class="glink" href="https://www.amazon.co.jp/s?k=%E3%80%90%E5%85%AC%E5%BC%8F%E3%80%91%E3%82%B3%E3%82%B9%E3%83%91%20%E3%81%A9%E3%81%93%E3%81%A7%E3%82%82%E3%81%84%E3%81%A3%E3%81%97%E3%82%87%20%E3%83%88%E3%83%AD%20%E3%82%A2%E3%82%AF%E3%83%AA%E3%83%AB%E3%81%A4%E3%81%BE%E3%81%BE%E3%82%8C&tag=redcomet-22" target="_blank" rel="sponsored noopener">Amazonで見る ↗</a>
+        <a class="glink" href="https://www.amazon.co.jp/dp/B0DR89S4JV?tag=redcomet-22" target="_blank" rel="sponsored noopener">Amazonで見る ↗</a>
       </div>
 
       <div class="good">
@@ -247,7 +247,7 @@
       </div>
 
     </div>
-    <p class="goods-note">リンクは Amazonアソシエイトです。版や 巻数が いろいろ あるものは、検索の 結果ページに つないでいます。</p>
+    <p class="goods-note">リンクは Amazonアソシエイトです。価格と 画像は 毎日 とりなおしています。ASINが わかっていない ものは、検索の 結果ページに つないでいます。</p>
   </div>
 </section>
 
@@ -283,6 +283,36 @@
     <span class="disclosure">当サイトはAmazonアソシエイト・プログラムに参加しており、掲載しているリンクから商品が買われると運営者に紹介料が入る場合があります。</span>
   </div>
 </footer>
+
+<script>
+// Amazon Creators API で取った商品情報（tools/fetch_goods.py が assets/goods.json に書く）。
+// 取れていれば画像と価格を足し、無ければテキストカードのまま。
+(function () {
+  var cards = document.querySelectorAll('.good[data-asin]');
+  if (!cards.length) return;
+  fetch('assets/goods.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (d) {
+    var at = new Date(d.fetchedAt);
+    var stamp = isNaN(at) ? '' : (at.getMonth() + 1) + '/' + at.getDate() + '時点';
+    cards.forEach(function (c) {
+      var it = d.items && d.items[c.dataset.asin];
+      if (!it) return;
+      if (it.image) {
+        var img = document.createElement('img');
+        img.className = 'gimg'; img.src = it.image; img.alt = ''; img.loading = 'lazy';
+        c.insertBefore(img, c.firstChild);
+      }
+      if (it.price) {
+        var p = document.createElement('p');
+        p.className = 'gprice';
+        p.innerHTML = it.price + (stamp ? ' <small>' + stamp + '</small>' : '');
+        var link = c.querySelector('.glink');
+        c.insertBefore(p, link);
+      }
+      if (it.url) { var a = c.querySelector('.glink'); if (a) a.href = it.url; }
+    });
+  }).catch(function () { /* 取れなければ何もしない */ });
+})();
+</script>
 
 </body>
 </html>
