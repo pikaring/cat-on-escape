@@ -33,6 +33,23 @@ ride-on-qc / eat-on-gpx / rock-on-mj / cat-on-escape）は、**見た目も 作�
 - 画像は 読みこめた ときだけ 使い、だめなら 代わりの 表示で 遊べるようにする
 - アイコンは `tools/make_icons.py` が ゲームの 猫の顔から つくる
 
+## 検索エンジン向け（9サイト 共通）
+
+| もの | 形 |
+| --- | --- |
+| `sitemap.xml` | サイトの 根（rock-on-mj だけ `docs/`）に 置く。紹介ページと `/app/` の 2本。`<loc>` と `<lastmod>` だけ |
+| `rel="canonical"` | 紹介ページと `/app/` の `<head>` に 1つずつ。末尾は `/`（`index.html` は 付けない） |
+| JSON-LD | `<head>` の 末尾に 1つ。ゲームは `WebApplication` + `GameApplication`、道具は `UtilitiesApplication`、rock-on-mj は `SoftwareApplication`（Windows）、ポータルは `CollectionPage` + `ItemList` |
+| `description` | 探すときの ことば（例：脳トレ／クイズ／議事録）を 入れる。JSON-LD の `description` と 同じ 文にする |
+
+- `robots.txt` は **`pikaring.github.io` リポジトリの 根に 1つだけ**。
+  `/portal/robots.txt` のような 下の 階層に 置いても クローラーは 読まない。
+  サイトを 増やしたら そこの `Sitemap:` 行を 足す
+- `screenshot` は 実際の 画面の 画像（`assets/og.png`）が ある ときだけ 書く。アイコンで 代用しない
+- FAQ の 構造化データは 入れない（Google が 一般サイトでは 出さなく なったため）
+- Search Console は URLプレフィックスの プロパティ（`github.io` は ドメイン認証が 使えない）。
+  確認ファイルは 消さずに 残す
+
 ## GitHub Pages
 
 Settings → Pages → Source: `Deploy from a branch` → Branch: `main` / `/ (root)`
