@@ -43,6 +43,7 @@
     { key: 'kijitora',  name: 'キジトラ', image: 'images/face-kijitora.png' },
     { key: 'hachiware', name: 'ハチワレ', image: 'images/face-hachiware.png' },
     { key: 'mike',      name: 'みけねこ', image: 'images/face-mike.png' },
+    { key: 'shiro',     name: 'しろねこ', image: 'images/face-shiro.png' },
   ];
 
   /** どうぐ。icon は 絵が できるまでの ざんてい（image に パスを いれると 画像に なる）。 */
@@ -778,7 +779,7 @@
 
   function buildKindChoices() {
     kindChoice.innerHTML = '';
-    [{ n: 4, sub: 'やさしい' }, { n: 5, sub: 'ふつう' }].forEach((item) => {
+    [{ n: 4, sub: 'やさしい' }, { n: 5, sub: 'ふつう' }, { n: 6, sub: 'むずかしい' }].forEach((item) => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'cat-choice' + (item.n === typeCount ? ' is-current' : '');
@@ -830,7 +831,10 @@
   window.addEventListener('orientationchange', layout);
 
   try { best = Number(localStorage.getItem(BEST_KEY)) || 0; } catch (e) { best = 0; }
-  try { typeCount = Number(localStorage.getItem(KIND_KEY)) === 4 ? 4 : 5; } catch (e) { typeCount = 5; }
+  try {
+    const saved = Number(localStorage.getItem(KIND_KEY));
+    typeCount = [4, 5, 6].includes(saved) ? saved : 5;
+  } catch (e) { typeCount = 5; }
   kindSubEl.textContent = typeCount + 'しゅるい';
 
   loadImages();

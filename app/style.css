@@ -191,6 +191,7 @@ body {
 .cat__body--kijitora  { background-color: #9a9186; border: 3px solid #6f6960; }
 .cat__body--hachiware { background-color: #fdfbf7; border: 8px solid #23201d; }
 .cat__body--mike      { background-color: #23201d; border: 8px solid #fdfbf7; box-shadow: inset 0 0 0 2px #23201d, 0 0 0 2px #8d8378; }
+.cat__body--shiro     { background-color: #fdfbf7; border: 3px solid #23201d; box-shadow: inset 0 0 0 6px #b9ab97; }
 
 /* 画像が よみこめた ときは 丸の ぬりと わくを けす
    （よみこめない ときは 下の 丸の ままで あそべる） */
@@ -418,6 +419,9 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
+
+/* 3つの ときは、さいごの1つを よこいっぱいに ひろげる */
+.cat-choice:last-child:nth-child(odd) { grid-column: 1 / -1; }
 
 .cat-choice {
   position: relative;
