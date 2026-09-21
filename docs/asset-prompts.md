@@ -1,55 +1,171 @@
-# 画像素材の生成プロンプト
+# 画像素材の生成プロンプト（Gemini 用）
 
 このゲームで使う猫の絵は **「顔だけ」の正方形アイコン** です。
-全身像だとマスの中で小さくなってしまうため、顔がフレームいっぱいに入る構図にします。
+全身像だとマスの中で顔が小さくなってしまうため、顔がフレームいっぱいに入る構図にします。
 
 出力した画像は `app/images/` に置き、`app/main.js` の `CAT_TYPES` にパスを書けば差し替わります。
 
-## 猫の顔 5種（`app/images/face-*.png`）
+## 作るもの
 
-ファイル名は `face-kuro.png` / `face-chashiro.png` / `face-kijitora.png` / `face-hachiware.png` / `face-mike.png`。
-1匹ずつ生成しても、5匹まとめて生成して切り出してもかまいません。
+| ファイル | 中身 | サイズ |
+| --- | --- | --- |
+| `app/images/face-kuro.png` | くろねこの顔 | 512×512px（正方形） |
+| `app/images/face-chashiro.png` | ちゃしろの顔 | 〃 |
+| `app/images/face-kijitora.png` | キジトラの顔 | 〃 |
+| `app/images/face-hachiware.png` | ハチワレの顔 | 〃 |
+| `app/images/face-mike.png` | みけねこの顔 | 〃 |
+| `app/images/icon-512.png` ほか | アプリのアイコン | 512 / 192 / 180 / 32px |
+
+5匹は **同じ画風・同じ顔の大きさ・同じ線の太さ** で揃えるのが肝心です。
+盤面に並んだときに毛色のちがいだけで見分けられるようにします。
+
+---
+
+## 1. 1匹目（くろねこ）をつくる
+
+まずこの1枚を納得いくまで作り込みます。ここで決まった画風が5匹ぶんの基準になります。
 
 ```
-かわいい猫の「顔だけ」のアイコンを作ってください。
+かわいい猫の「顔だけ」のアイコンを1枚つくってください。パズルゲームの駒に使います。
 
-【構図（重要）】
-・正方形の画像。猫の顔が正面を向き、フレームいっぱいに大きく入る
-・耳の先から下あごまでが画像の高さの85%ほどを占める（全身は描かない、首から下は入れない）
+【構図（いちばん大事）】
+・正方形の画像。猫の顔が正面をまっすぐ向いている
+・耳の先から下あごまでが画像の高さの85%を占めるくらい、顔を大きく入れる
+・首から下（体・前足・しっぽ）は描かない。顔と耳だけ
 ・顔は画像の中央。まわりの余白は5〜10%程度
-・背景は完全な透過（PNG）。透過にできない場合は真っ白な単色背景
-・影を落とさない、枠線・文字・ロゴは描かない
+・背景は白一色のベタ塗り（グラデーション・模様・市松模様は使わない）
+・影は落とさない。枠線・文字・ロゴ・透かしは一切入れない
 
 【画風】
-・フラットなベタ塗りのアニメ・絵本調、影やグラデーションは最小限
-・輪郭線：こい茶色の太い線（小さく表示してもはっきり見える太さ）
-・目は大きく黒目がち、にっこりした表情
-・高コントラストで、遠目でも毛色のちがいがすぐ分かるデザイン
-・写実的でない、かわいらしいマスコット的なデザイン
+・フラットなベタ塗りのアニメ・絵本調。影やグラデーションは最小限
+・輪郭線はこい茶色の太い線。小さく表示してもはっきり見える太さ
+・目は大きく黒目がち、にっこりした やさしい表情
+・高コントラストで、遠目でもシルエットと毛色がすぐ分かるデザイン
+・写実的ではない、かわいらしいマスコット的なデザイン
+・ひげは短く3本ずつ、線は細めでよい
 
-【毛色】（同じ画風・同じ大きさ・同じ線の太さで5種類）
-1. くろねこ：全身まっ黒、目は黄色みのある大きな瞳
-2. ちゃしろ：クリームホワイトの地に、オレンジ茶色の模様
-3. キジトラ：茶色がかった灰色に、こげ茶のしま模様
-4. ハチワレ：額から鼻すじが白く、頭の両側が黒
-5. みけねこ：白地に黒とオレンジのぶち
+【この猫の毛色】
+・くろねこ：全身まっ黒の毛。黒くつぶれないよう、輪郭より内側はすこし明るい墨色にする
+・目は黄色みのある大きな瞳、鼻と口元はうすいグレー
 
 【サイズ】
-・512×512ピクセル（または1024×1024ピクセル）
+・1024×1024ピクセルの正方形
 ```
 
-## 3×3のスプライトシートを使う場合
+## 2. 残りの4匹を、1匹目にそろえて出す
 
-前作 [tap-on-neko](https://github.com/pikaring/tap-on-neko) の `docs/cat-sprite-prompt.md` と同じ
-3×3（9ポーズ）のシートを使いたいときは、`CAT_TYPES` に `sheet: true` を足すと
-9マスのうち左上のコマだけを表示します。
+**できあがった1枚目を添付したうえで**、次の文を毛色だけ変えて4回送ります。
+文章だけで作り直すより、画像を見せて「これと同じ」と伝えるほうが画風がそろいます。
+
+```
+添付した猫の顔アイコンと、まったく同じ画風・同じ構図・同じ顔の大きさ・同じ線の太さで、
+毛色だけを変えた猫の顔を1枚つくってください。
+輪郭線の色と太さ、目の形と大きさ、鼻と口の描きかた、ひげの本数、
+顔がフレームに占める割合、白一色の背景は、添付画像とそろえてください。
+
+【毛色】
+◯◯
+```
+
+`◯◯` にそれぞれを入れます。
+
+| ファイル名 | 毛色の指定 |
+| --- | --- |
+| `face-chashiro.png` | ちゃしろ：クリームホワイトの地に、オレンジ茶色の模様。頭の上と耳、目のまわりにオレンジ茶色が入り、口元から下あごは白 |
+| `face-kijitora.png` | キジトラ：茶色がかった灰色の地に、こげ茶色の細いしま模様。おでこに縦じまが3本、ほおにも短いしま。口元はうすいクリーム色 |
+| `face-hachiware.png` | ハチワレ：おでこから鼻すじにかけて白い線が通り、その左右（頭の両側）は黒。口元とあごは白 |
+| `face-mike.png` | みけねこ：白い地に、黒とオレンジのぶちが左右で非対称に入る。右耳のまわりは黒、左耳のまわりはオレンジ茶色 |
+
+## 3. うまくいかないときの言い直し
+
+出たものに合わせて、次の一文を足して出し直します。
+
+- 顔が小さい → 「顔をもっと大きく、耳の先が画像の上から5%、あごが下から10%の位置に来るくらいまで拡大してください」
+- 体が入ってしまう → 「首から下は描かないでください。顔と耳だけのアイコンです」
+- 斜めを向く → 「顔は正面をまっすぐ向けてください。真正面からの構図です」
+- 線が細くて見えない → 「輪郭線をもっと太くしてください。64ピクセルに縮小しても形が分かる太さです」
+- 背景が白でない → 「背景は純白 #FFFFFF の一色にしてください。影も模様も入れないでください」
+- 5匹の大きさがバラバラ → 添付画像といっしょに「顔の大きさを添付画像と1ピクセル単位でそろえてください」
+
+## 4. アイコン（あとまわしで可）
+
+いまのアイコンは `assets/icon.svg` から書き出した仮のものです。猫の絵ができたら同じ画風で作り直します。
+
+```
+スマートフォンのアプリアイコンを1枚つくってください。
+
+・正方形。背景は濃い緑（#2f5d3a）のベタ塗り
+・中央に、添付した猫の顔（同じ画風・同じ線の太さ）を大きく配置する
+・猫の左側に、右へ走っている勢いを表す黄色（#ffe36e）の短い横線を3本入れる
+・文字・ロゴ・枠線は入れない
+・1024×1024ピクセル
+```
+
+## 5. 出力したあとの手直し
+
+1. **正方形にそろえる**：顔が中央、余白が上下左右で同じくらいになるようにトリミング。
+2. **背景を透過にする**：Gemini は透過PNGを安定して出せないので、白背景で出してから抜きます。
+   前作 [tap-on-neko](https://github.com/pikaring/tap-on-neko) の `tools/build_cat_sheet.py` が
+   「白ベタ・市松模様の背景を外周から判定して抜く」処理を持っているので流用できます。
+   透過にしなくても遊べますが、丸いマスに白い四角が乗って見えます。
+3. **512×512px に縮小**して `app/images/face-*.png` として保存。
+4. `app/main.js` の `CAT_TYPES` にパスを書く。
+
+```js
+const CAT_TYPES = [
+  { key: 'kuro',      name: 'くろねこ', image: 'images/face-kuro.png' },
+  { key: 'chashiro',  name: 'ちゃしろ', image: 'images/face-chashiro.png' },
+  { key: 'kijitora',  name: 'キジトラ', image: 'images/face-kijitora.png' },
+  { key: 'hachiware', name: 'ハチワレ', image: 'images/face-hachiware.png' },
+  { key: 'mike',      name: 'みけねこ', image: 'images/face-mike.png' },
+];
+```
+
+画像は読み込めたときだけ使われるので、**1種類ずつ順に差し替えて確認**できます。
+パスを間違えても、その種類だけ暫定の丸のままで遊べます。
+
+## 6. 英語版プロンプト（日本語でうまく出ないとき）
+
+```
+A single square icon of a cute cat's FACE ONLY, for a puzzle game tile.
+
+Composition (most important):
+- Square image, the cat faces the viewer straight on
+- The face fills the frame: from ear tips to chin spans about 85% of the image height
+- Do NOT draw the body, paws or tail. Head and ears only
+- Face centered, 5-10% margin around it
+- Plain pure white background (#FFFFFF), no gradient, no checkerboard, no pattern
+- No drop shadow, no border, no text, no logo, no watermark
+
+Style:
+- Flat vector cartoon, children's picture-book style, minimal shading
+- Thick dark-brown outline, clearly readable when scaled down to 64px
+- Large expressive black eyes, gentle smiling expression
+- High contrast, simple readable silhouette, kawaii mascot design
+- Three short thin whiskers on each side
+
+Fur color:
+- Solid black cat; keep the inside slightly lighter than the outline so it does not read as a flat blob
+- Yellow-toned eyes, light grey nose and muzzle
+
+Size: 1024x1024 pixels.
+```
+
+2匹目以降は、1匹目の画像を添付して次の文を送ります。
+
+```
+Using the attached cat face icon as the reference, generate the SAME character style,
+SAME composition, SAME face size and SAME line weight, changing ONLY the fur pattern to:
+<fur description>
+Keep the outline color and thickness, eye shape and size, nose and muzzle,
+number of whiskers, the framing, and the plain white background identical to the reference.
+```
+
+## 7. 3×3のスプライトシートを使う場合
+
+前作と同じ 3×3（9ポーズ）のシートを使いたいときは、`CAT_TYPES` に `sheet: true` を足すと
+9マスのうち左上のコマだけを表示します。プロンプトは前作の `docs/cat-sprite-prompt.md` がそのまま使えます。
 
 ```js
 { key: 'kuro', name: 'くろねこ', image: 'images/cat-kuro.png', sheet: true }
 ```
-
-## アイコン（`app/images/icon-*.png` / `assets/icon.png`）
-
-いまは `assets/icon.svg`（緑の角丸に白い猫の顔＋右向きのスピード線）から書き出した仮のものです。
-猫の絵ができたら、同じ画風のアイコンに差し替えてください。必要なサイズは
-`icon-32.png` / `icon-180.png` / `icon-192.png` / `icon-512.png`、紹介ページ用に `assets/icon.png`（512px）と `assets/favicon.png`（64px）。
