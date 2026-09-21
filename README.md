@@ -18,8 +18,7 @@
 | --- | --- |
 | `index.html` | 紹介ページ。ほかのツールと同じデザイン（`assets/site.css`） |
 | `assets/site.css` | 紹介ページの見た目。アクセント色はみどり `#3f8f57` |
-| `assets/icon.svg` | アイコンの元データ（仮。猫の絵ができたら差し替え） |
-| `assets/icon.png` / `assets/favicon.png` | 紹介ページ・OG画像用 |
+| `assets/icon.png` / `assets/favicon.png` | 紹介ページ・OG画像用（`tools/make_icons.py` が生成） |
 | `app/index.html` | ゲームの画面（ヘッダー／ばん／おおきなボタン／モーダル） |
 | `app/style.css` | 大きなUI・高コントラスト・アニメーション |
 | `app/main.js` | ゲームロジック・そろい判定・落下・連鎖・LocalStorage |
@@ -28,6 +27,7 @@
 | `app/images/tool-*.png` | どうぐの画像4種（ねこじゃらし よこ／たて・けいとだま・すず） |
 | `app/images/foe-*.png` | じゃまものの画像2種（いぬ・おおかみ） |
 | `tools/make_face.py` | 生成AIが出した顔の画像を、背景除去＋グリッドの切り分け＋正方形＋512pxに整える |
+| `tools/make_icons.py` | 猫の顔からアプリのアイコン一式をつくる |
 | `docs/asset-prompts.md` | 猫の顔を画像生成AIで作るときのプロンプト |
 
 ## 遊びかた
