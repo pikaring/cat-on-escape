@@ -64,8 +64,8 @@
   /** じゃまもの。ねこでは ないので そろわず、おちても こない。
    *  となりで ねこが にげると よわって、たいりょくが 0に なると いなく なる。 */
   const BLOCKERS = {
-    dog:  { name: 'いぬ',     icon: '🐶', hp: 2, image: null },
-    wolf: { name: 'おおかみ', icon: '🐺', hp: 3, image: null },
+    dog:  { name: 'いぬ',     icon: '🐶', hp: 2, image: 'images/foe-dog.png' },
+    wolf: { name: 'おおかみ', icon: '🐺', hp: 3, image: 'images/foe-wolf.png' },
   };
 
   /** むずかしさ。じゃまものは レベルが 上がる ごとに 1つずつ ふえる（max まで）。 */
@@ -139,6 +139,16 @@
       };
       img.src = def.image;
     });
+    Object.values(BLOCKERS).forEach((def) => {
+      def.ready = false;
+      if (!def.image) return;
+      const img = new Image();
+      img.onload = () => {
+        def.ready = true;
+        eachTile((tile) => { if (tile.blocker) paint(tile); });
+      };
+      img.src = def.image;
+    });
   }
 
   /* ---------------- レイアウト ---------------- */
@@ -187,6 +197,20 @@
     return tile;
   }
 
+  /** じゃまものの みためを つける（絵文字、または 顔の 画像） */
+  function dressFoe(el, kind) {
+    const def = BLOCKERS[kind];
+    el.className = 'cat__foe cat__foe--' + kind;
+    if (def.image && def.ready) {
+      el.textContent = '';
+      el.classList.add('cat__foe--image');
+      el.style.backgroundImage = 'url("' + def.image + '")';
+    } else {
+      el.textContent = def.icon;
+      el.style.backgroundImage = '';
+    }
+  }
+
   /** ねこの みためを つける（丸、または 顔の 画像） */
   function dressBody(body, type) {
     const def = CAT_TYPES[type];
@@ -211,15 +235,7 @@
         tile.badge = document.createElement('span');
         tile.el.appendChild(tile.badge);
       }
-      tile.badge.className = 'cat__foe cat__foe--' + tile.blocker;
-      if (def.image && def.ready) {
-        tile.badge.textContent = '';
-        tile.badge.classList.add('cat__foe--image');
-        tile.badge.style.backgroundImage = 'url("' + def.image + '")';
-      } else {
-        tile.badge.textContent = def.icon;
-        tile.badge.style.backgroundImage = '';
-      }
+      dressFoe(tile.badge, tile.blocker);
       if (!tile.pips) {
         tile.pips = document.createElement('span');
         tile.pips.className = 'cat__hp';
@@ -1072,8 +1088,8 @@
       }
       if (diff.max) {
         const foe = document.createElement('span');
-        foe.className = 'cat-choice__foe';
-        foe.textContent = BLOCKERS[diff.wolfFrom <= 3 ? 'wolf' : 'dog'].icon;
+        dressFoe(foe, diff.wolfFrom <= 3 ? 'wolf' : 'dog');
+        foe.classList.add('cat-choice__foe');
         sample.appendChild(foe);
       }
 
