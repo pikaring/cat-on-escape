@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cat on Escape｜4ひき そろえて ねこを にがす、おちもの パズル</title>
-<meta name="description" content="インストール不要・通信なし・ブラウザだけで動く、ねこを にがす おちもの パズル。ねこの顔をスライドしてタテかヨコに4匹そろえると、行列をつくって画面の右へ走って逃げていきます。制限時間もゲームオーバーもありません。">
+<title>Cat on Escape｜3びき そろえて ねこを にがす、おちもの パズル</title>
+<meta name="description" content="インストール不要・通信なし・ブラウザだけで動く、ねこを にがす おちもの パズル。ねこの顔をスライドしてタテかヨコに3匹そろえると、行列をつくって画面の右へ走って逃げていきます。4匹以上そろえると ねこじゃらしなどの どうぐが手に入ります。">
 <meta name="theme-color" content="#2f5d3a">
 
 <meta property="og:type" content="website">
-<meta property="og:title" content="Cat on Escape｜4ひき そろえて ねこを にがす、おちもの パズル">
-<meta property="og:description" content="4匹そろえて ねこを にがす パズル。そろった猫は行列をつくって画面の右へ走っていきます。インストール不要・通信なし。">
+<meta property="og:title" content="Cat on Escape｜3びき そろえて ねこを にがす、おちもの パズル">
+<meta property="og:description" content="3びき そろえて ねこを にがす パズル。4匹以上そろえると どうぐが手に入り、一列やまわり3×3をまとめて逃がせます。インストール不要・通信なし。">
 <meta property="og:url" content="https://pikaring.github.io/cat-on-escape/">
 <meta property="og:image" content="https://pikaring.github.io/cat-on-escape/assets/icon.png">
 
@@ -47,9 +47,9 @@
     <div>
       <span class="pill"><b>無料</b> · インストール不要 · 通信なし · MIT License</span>
       <h1>そろえたら、<br>ねこは 走りだす。</h1>
-      <p class="lead">ねこの顔を となりと いれかえて、タテか ヨコに 4匹そろえるパズル。
+      <p class="lead">ねこの顔を となりと いれかえて、タテか ヨコに 3匹そろえるパズル。
         そろった ねこは ぎょうれつを つくって、画面の 右へ 走って 逃げていきます。
-        あいた ところには 上から 新しい ねこが 落ちてきて、また そろえば 連鎖。
+        4匹以上そろえると ねこじゃらしなどの どうぐが のこり、一列まとめて 逃がせます。
         制限時間も、減点も、ゲームオーバーも ありません。</p>
       <div class="hero-actions">
         <a class="btn btn-main" href="app/">いますぐ あそぶ</a>
@@ -62,7 +62,7 @@
       <div class="screen screen-slide">
         <div class="sbar">
           <p class="sscore">スコア <b>1240</b> <span class="sbadge">さいこう 1240</span></p>
-          <p class="smsg">4ひき 右へ にげていった！</p>
+          <p class="smsg">よこ一れつが にげた！</p>
         </div>
         <div class="sfield">
           <div class="sboard">
@@ -96,9 +96,9 @@
   <div class="wrap">
     <div class="sec-head">
       <p class="eyebrow">どんなゲーム</p>
-      <h2>4匹そろえて、にがしてやる。</h2>
-      <p>よくある「3つそろえ」ではなく、<b>4匹そろえ</b>。
-        そろった ねこは その場で消えるのではなく、ぎょうれつを つくって 画面の 右へ 走りぬけます。</p>
+      <h2>3びき そろえて、どうぐで まとめて。</h2>
+      <p>そろった ねこは その場で消えるのではなく、ぎょうれつを つくって 画面の 右へ 走りぬけます。
+        4匹以上そろえると <b>どうぐ</b> が のこり、となりの ねこが 逃げると いっしょに はたらきます。</p>
     </div>
     <div class="cards">
       <div class="card">
@@ -112,11 +112,13 @@
       </div>
       <div class="card">
         <span class="num">02</span>
-        <h3>逃げる → 落ちる → 連鎖</h3>
-        <p>ねこが 走って いる あいだに 上から 新しい ねこが 落ちてきます。落ちた先で また そろえば 連鎖で 得点が 倍々に。</p>
+        <h3>4匹以上で どうぐが のこる</h3>
+        <p>大きくそろえると、その場に どうぐが のこります。となりの ねこが 逃げると いっしょに はたらいて、まとめて 逃がします。どうぐ同士が つながると 連鎖です。</p>
         <ul>
-          <li>連鎖は 画面まんなかに 大きく表示</li>
-          <li>5匹以上 そろえると ボーナス</li>
+          <li>ヨコに4匹 → ねこじゃらし（よこ一れつ）</li>
+          <li>タテに4匹 → ねこじゃらし（たて一れつ）</li>
+          <li>5匹以上 → けいとだま（まわり3×3）</li>
+          <li>タテとヨコが交わる → すず（ななめクロス）</li>
         </ul>
       </div>
       <div class="card">
@@ -149,9 +151,10 @@
     </div>
     <div class="steps-box" style="background:#fff;border:1px solid var(--line)">
       <div class="flow-step"><em>1</em><span>ねこを となりの マスへ ドラッグする（タップ2回でも いれかえられます）</span></div>
-      <div class="flow-step"><em>2</em><span>タテか ヨコに 同じ ねこが 4匹そろうと、走って 画面の 右へ 逃げていく</span></div>
-      <div class="flow-step"><em>3</em><span>あいた ところに 上から 新しい ねこが 落ちてくる。そろえば そのまま 連鎖</span></div>
-      <div class="flow-step"><em>4</em><span>そろわない いれかえは 元に もどります（手数は ふえません）</span></div>
+      <div class="flow-step"><em>2</em><span>タテか ヨコに 同じ ねこが 3匹そろうと、走って 画面の 右へ 逃げていく</span></div>
+      <div class="flow-step"><em>3</em><span>4匹以上そろえると どうぐが のこる。となりで ねこが 逃げると まとめて はたらく</span></div>
+      <div class="flow-step"><em>4</em><span>あいた ところに 上から 新しい ねこが 落ちてくる。そろえば そのまま 連鎖</span></div>
+      <div class="flow-step"><em>5</em><span>そろわない いれかえは 元に もどります（手数は ふえません）</span></div>
     </div>
     <p class="note">パソコンでは マウスの ドラッグ、スマホ・タブレットでは 指で すべらせて あそべます。</p>
   </div>
@@ -183,6 +186,7 @@
     <details open><summary>お金は かかりますか？</summary><p>かかりません。無料で、広告も 課金も ありません。</p></details>
     <details><summary>インストールは 必要ですか？</summary><p>不要です。ブラウザで開くだけ。ホーム画面に追加すると、アプリのように 全画面で 開けます。</p></details>
     <details><summary>データは どこかに 送られますか？</summary><p>送られません。最高得点も 設定も、お使いの端末の中だけに 保存されます。</p></details>
+    <details><summary>どうぐは どうやって 使いますか？</summary><p>4匹以上そろえると、その場に どうぐが のこります（光った猫が目印）。となりで ねこが 逃げると ひとりでに はたらくので、どうぐの まわりで そろえるのが コツです。</p></details>
     <details><summary>猫は 何種類 いますか？</summary><p>くろねこ・ちゃしろ・キジトラ・ハチワレ・みけねこの5種類です。「ねこの かず」から 4種類（やさしい）と 5種類（むずかしい）を 切りかえられます。</p></details>
     <details><summary>前作との ちがいは？</summary><p><a href="https://pikaring.github.io/tap-on-neko/">Tap on NEKO</a> は ねこの お世話と クイズ、こちらは パズルです。見た目と 操作の かんじは そろえてあります。</p></details>
   </div>

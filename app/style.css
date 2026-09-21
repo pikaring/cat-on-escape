@@ -31,6 +31,7 @@
   --swap-ms: 170ms;
   --fall-ms: 260ms;
   --run-ms:  900ms;
+  --blast-ms: 420ms;
 }
 
 * { box-sizing: border-box; }
@@ -184,6 +185,13 @@ body {
   transition: box-shadow .12s ease;
 }
 
+/* ざんていの みため：くろ丸・しろ丸（顔の 画像が できるまで） */
+.cat__body--kuro      { background-color: #23201d; border: 3px solid #100e0c; }
+.cat__body--chashiro  { background-color: #fdfbf7; border: 3px solid #b9ab97; }
+.cat__body--kijitora  { background-color: #9a9186; border: 3px solid #6f6960; }
+.cat__body--hachiware { background-color: #fdfbf7; border: 8px solid #23201d; }
+.cat__body--mike      { background-color: #23201d; border: 8px solid #fdfbf7; box-shadow: inset 0 0 0 2px #23201d, 0 0 0 2px #8d8378; }
+
 /* 画像が よみこめた ときは 丸の ぬりと わくを けす
    （よみこめない ときは 下の 丸の ままで あそべる） */
 .cat__body--image {
@@ -199,12 +207,60 @@ body {
   background-position: 0% 0%;
 }
 
-/* ざんていの みため：くろ丸・しろ丸（顔の 画像が できるまで） */
-.cat__body--kuro      { background-color: #23201d; border: 3px solid #100e0c; }
-.cat__body--chashiro  { background-color: #fdfbf7; border: 3px solid #b9ab97; }
-.cat__body--kijitora  { background-color: #9a9186; border: 3px solid #6f6960; }
-.cat__body--hachiware { background-color: #fdfbf7; border: 8px solid #23201d; }
-.cat__body--mike      { background-color: #23201d; border: 8px solid #fdfbf7; box-shadow: inset 0 0 0 2px #23201d, 0 0 0 2px #8d8378; }
+/* ========== どうぐ（ねこじゃらし・けいとだま・すず） ========== */
+.cat--item { z-index: 2; }
+
+.cat--item .cat__body {
+  box-shadow: 0 0 0 4px var(--c-accent), 0 0 14px rgba(255, 227, 110, .95);
+  animation: tool-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes tool-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px var(--c-accent), 0 0 10px rgba(255, 227, 110, .7); }
+  50%      { box-shadow: 0 0 0 5px var(--c-accent), 0 0 20px rgba(255, 227, 110, 1); }
+}
+
+/* もっている どうぐの しるし。絵が できたら ITEMS の image で 画像に さしかわる。 */
+.cat__tool {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 46%;
+  height: 46%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--cell) * .24);
+  line-height: 1;
+  background-color: #ffffff;
+  background-size: 74%;
+  background-position: center;
+  background-repeat: no-repeat;
+  border: 2px solid var(--c-header);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .3);
+  pointer-events: none;
+}
+
+.cat__tool--col { transform: rotate(-90deg); }   /* ねこじゃらしを たてに */
+.cat__tool--image { color: transparent; }
+
+/* どうぐが はたらいた ところの ひかり */
+.blast {
+  position: absolute;
+  background: rgba(255, 227, 110, .92);
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 5;
+  /* transform は JS が いれる（ななめ）ので、ここでは opacity だけ うごかす */
+  animation: blast var(--blast-ms) ease-out forwards;
+}
+
+@keyframes blast {
+  0%   { opacity: .1; }
+  25%  { opacity: .95; }
+  100% { opacity: 0; }
+}
 
 /* そろわなかった ときの ぷるぷる */
 .cat.is-nope .cat__body { animation: nope 220ms ease; }
