@@ -103,13 +103,19 @@
 
 ## 5. 出力したあとの手直し
 
-1. **正方形にそろえる**：顔が中央、余白が上下左右で同じくらいになるようにトリミング。
-2. **背景を透過にする**：Gemini は透過PNGを安定して出せないので、白背景で出してから抜きます。
-   前作 [tap-on-neko](https://github.com/pikaring/tap-on-neko) の `tools/build_cat_sheet.py` が
-   「白ベタ・市松模様の背景を外周から判定して抜く」処理を持っているので流用できます。
-   透過にしなくても遊べますが、丸いマスに白い四角が乗って見えます。
-3. **512×512px に縮小**して `app/images/face-*.png` として保存。
-4. `app/main.js` の `CAT_TYPES` にパスを書く。
+**`tools/make_face.py` に通すだけ**です。背景の除去・切りつめ・正方形化・512pxへの縮小を
+まとめてやります（目のハイライトのような、囲まれた白は残します）。
+
+```
+pip install pillow numpy          # 最初の1回だけ
+python3 tools/make_face.py app/images kuro.jpg:face-kuro chashiro.jpg:face-chashiro
+```
+
+- 入力は `入力ファイル:出力名` の形。まとめて何枚でも渡せます。
+- 白く抜けきらない／猫まで削れるときは、スクリプト冒頭の `TOLERANCE`（既定26）を上下させます。
+- 顔の大きさを変えたいときは `FILL`（既定0.94。1枚のなかで顔が占める割合）を調整します。
+
+そのあと `app/main.js` の `CAT_TYPES` にパスを書きます。
 
 ```js
 const CAT_TYPES = [

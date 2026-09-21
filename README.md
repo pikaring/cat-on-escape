@@ -23,7 +23,8 @@
 | `app/style.css` | 大きなUI・高コントラスト・アニメーション |
 | `app/main.js` | ゲームロジック・そろい判定・落下・連鎖・LocalStorage |
 | `app/manifest.json` | ホーム画面に追加したときの設定（PWA） |
-| `app/images/` | 猫の顔の画像を置く場所（いまはアイコンのみ） |
+| `app/images/face-*.png` | 猫の顔の画像（くろねこのみ差し替えずみ） |
+| `tools/make_face.py` | 生成AIが出した顔の画像を、背景除去＋正方形＋512pxに整える |
 | `docs/asset-prompts.md` | 猫の顔を画像生成AIで作るときのプロンプト |
 
 ## 遊びかた
@@ -42,12 +43,16 @@
 
 暫定の丸（黒丸・白丸）は仮の表示です。画像ができたら2ステップで差し替えられます。
 
-1. 画像を `app/images/` に置く（**顔だけ**の正方形・背景透過PNG、512px目安）。
+1. 生成した画像を `tools/make_face.py` に通す（背景除去・正方形・512px化）。
+   ```
+   pip install pillow numpy
+   python3 tools/make_face.py app/images chashiro.jpg:face-chashiro
+   ```
 2. `app/main.js` 冒頭の `CAT_TYPES` の `image` にパスを書く。
 
 ```js
 const CAT_TYPES = [
-  { key: 'kuro',      name: 'くろねこ', image: 'images/face-kuro.png' },
+  { key: 'kuro',      name: 'くろねこ', image: 'images/face-kuro.png' },  // 差し替えずみ
   { key: 'chashiro',  name: 'ちゃしろ', image: 'images/face-chashiro.png' },
   { key: 'kijitora',  name: 'キジトラ', image: 'images/face-kijitora.png' },
   { key: 'hachiware', name: 'ハチワレ', image: 'images/face-hachiware.png' },

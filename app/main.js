@@ -29,7 +29,7 @@
   /** ねこの しゅるい。image に 'images/face-kuro.png' のような パスを いれると 画像に なる。
    *  ならびは 前作「ねこの ともだち」の ねこに あわせてある。 */
   const CAT_TYPES = [
-    { key: 'kuro',      name: 'くろねこ', image: null },
+    { key: 'kuro',      name: 'くろねこ', image: 'images/face-kuro.png' },
     { key: 'chashiro',  name: 'ちゃしろ', image: null },
     { key: 'kijitora',  name: 'キジトラ', image: null },
     { key: 'hachiware', name: 'ハチワレ', image: null },
