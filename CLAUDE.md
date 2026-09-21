@@ -50,6 +50,17 @@ ride-on-qc / eat-on-gpx / rock-on-mj / cat-on-escape）は、**見た目も 作�
 - Search Console は URLプレフィックスの プロパティ（`github.io` は ドメイン認証が 使えない）。
   確認ファイルは 消さずに 残す
 
+## アクセス解析（GA4）
+
+- 測定ID は `G-3FCFQY4W85`。9サイトで **プロパティも データストリームも 1つ**
+  （どれも `pikaring.github.io` の 下なので 分けない。サイトの 区別は ページパスで 付く）
+- 入れるのは **紹介ページ（`/index.html`）だけ**。`/app/` には 入れない。
+  アプリには「通信なし」と 書いて あるので、そこを 破らない
+- 置きどころは `<head>` の、ホーム画面から 開いた ときの `location.replace('app/')` より **後ろ**、
+  JSON-LD より **手前**。こうすると ホーム画面 起動で 紹介ページの 見かけの 表示回数が 増えない
+- 測定ID は 公開してよい 値。Secrets には しない
+- GAS の アクセスカウンターは そのまま 残す（累計の 表示用）
+
 ## GitHub Pages
 
 Settings → Pages → Source: `Deploy from a branch` → Branch: `main` / `/ (root)`
