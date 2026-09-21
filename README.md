@@ -137,3 +137,5 @@ MIT License
 
 動かすには、リポジトリの Settings → Secrets and variables → Actions に
 `CREATORS_CLIENT_ID` と `CREATORS_CLIENT_SECRET` を登録してください。
+登録するまでのあいだ、ワークフローは失敗せずに何もしません（画像と価格が出ないだけで、
+アフィリエイトのリンク自体は Secret と関係なく動きます）。
