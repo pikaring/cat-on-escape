@@ -36,7 +36,12 @@
   const ESCAPE_HOLD = 230;  // はしりだしてから ばんを つめるまで
 
   const BEST_KEY = 'catonescape.best';
-  const KIND_KEY = 'catonescape.kinds';
+  const KIND_KEY = 'catonescape.kinds';   // ふるい ほぞん（ねこの しゅるい数）からの ひきつぎ用
+  const DIFF_KEY = 'catonescape.diff';
+
+  // レベル：にがした ねこの かずが たまると 上がる
+  const LEVEL_BASE = 40;    // レベル1→2 に ひつような かず
+  const LEVEL_STEP = 15;    // レベルが 上がる ごとに ふえる かず
 
   /** ねこの しゅるい。image に 'images/face-kuro.png' のような パスを いれると 画像に なる。 */
   const CAT_TYPES = [
@@ -56,15 +61,31 @@
     cross: { name: 'すず',                 icon: '🔔', what: 'ななめクロス', image: 'images/tool-cross.png' },
   };
 
+  /** じゃまもの。ねこでは ないので そろわず、おちても こない。
+   *  となりで ねこが にげると よわって、たいりょくが 0に なると いなく なる。 */
+  const BLOCKERS = {
+    dog:  { name: 'いぬ',     icon: '🐶', hp: 2, image: null },
+    wolf: { name: 'おおかみ', icon: '🐺', hp: 3, image: null },
+  };
+
+  /** むずかしさ。じゃまものは レベルが 上がる ごとに 1つずつ ふえる（max まで）。 */
+  const DIFFS = {
+    easy:   { name: 'やさしい',   note: 'ねこ4しゅるい・じゃまもの なし', types: 4, max: 0, wolfFrom: 99 },
+    normal: { name: 'ふつう',     note: 'ねこ5しゅるい・いぬ さいだい2',  types: 5, max: 2, wolfFrom: 5 },
+    hard:   { name: 'むずかしい', note: 'ねこ6しゅるい・じゃまもの さいだい3', types: 6, max: 3, wolfFrom: 3 },
+  };
+
   const boardEl    = document.getElementById('board');
   const areaEl     = document.getElementById('boardArea');
   const runwayEl   = document.getElementById('runway');
   const scoreEl    = document.getElementById('score');
   const bestEl     = document.getElementById('best');
-  const movesEl    = document.getElementById('moves');
   const messageEl  = document.getElementById('message');
   const bignewsEl  = document.getElementById('bignews');
   const bignewsTxt = document.getElementById('bignewsText');
+  const levelEl    = document.getElementById('level');
+  const gaugeEl    = document.getElementById('gaugeBar');
+  const quotaEl    = document.getElementById('quota');
   const kindSubEl  = document.getElementById('kindSub');
   const kindModal  = document.getElementById('kindModal');
   const kindChoice = document.getElementById('kindChoices');
@@ -75,10 +96,13 @@
   /** grid[r][c] = tile | null */
   let grid = [];
   let cell = 56;
-  let typeCount = 4;
+  let diffKey = 'normal';
+  let typeCount = 5;
   let score = 0;
   let moves = 0;
   let best = 0;
+  let level = 1;
+  let rescued = 0;          // いまの レベルで にがした ねこの かず
   let busy = true;
   let selected = null;
   let uid = 0;
@@ -149,7 +173,16 @@
     el.appendChild(body);
     boardEl.appendChild(el);
 
-    const tile = { id: ++uid, type, item: null, el, body, badge: null, r: 0, c: 0 };
+    const tile = { id: ++uid, type, item: null, blocker: null, hp: 0, el, body, badge: null, pips: null, r: 0, c: 0 };
+    paint(tile);
+    return tile;
+  }
+
+  /** じゃまもの（いぬ・おおかみ）に する */
+  function makeBlocker(tile, kind) {
+    tile.item = null;
+    tile.blocker = kind;
+    tile.hp = BLOCKERS[kind].hp;
     paint(tile);
     return tile;
   }
@@ -170,6 +203,39 @@
   function paint(tile) {
     dressBody(tile.body, tile.type);
     tile.el.classList.toggle('cat--item', !!tile.item);
+    tile.el.classList.toggle('cat--blocker', !!tile.blocker);
+
+    if (tile.blocker) {
+      const def = BLOCKERS[tile.blocker];
+      if (!tile.badge) {
+        tile.badge = document.createElement('span');
+        tile.el.appendChild(tile.badge);
+      }
+      tile.badge.className = 'cat__foe cat__foe--' + tile.blocker;
+      if (def.image && def.ready) {
+        tile.badge.textContent = '';
+        tile.badge.classList.add('cat__foe--image');
+        tile.badge.style.backgroundImage = 'url("' + def.image + '")';
+      } else {
+        tile.badge.textContent = def.icon;
+        tile.badge.style.backgroundImage = '';
+      }
+      if (!tile.pips) {
+        tile.pips = document.createElement('span');
+        tile.pips.className = 'cat__hp';
+        tile.el.appendChild(tile.pips);
+      }
+      tile.pips.innerHTML = '';
+      for (let i = 0; i < def.hp; i++) {
+        const pip = document.createElement('i');
+        if (i < tile.hp) pip.className = 'is-on';
+        tile.pips.appendChild(pip);
+      }
+      tile.el.setAttribute('aria-label', def.name + '（あと' + tile.hp + '）');
+      return;
+    }
+
+    if (tile.pips) { tile.pips.remove(); tile.pips = null; }
 
     if (tile.item) {
       const def = ITEMS[tile.item];
@@ -210,8 +276,8 @@
   /* ---------------- ばんめんの はんてい ---------------- */
 
   function typeGrid() {
-    // どうぐに なった マスは ねこの かおが 消えているので、そろいの はんていから 外す
-    return grid.map((row) => row.map((tile) => (tile && !tile.item ? tile.type : -1)));
+    // どうぐ／じゃまものの マスは ねこでは ないので、そろいの はんていから 外す
+    return grid.map((row) => row.map((tile) => (tile && !tile.item && !tile.blocker ? tile.type : -1)));
   }
 
   function anyItem() {
@@ -385,7 +451,20 @@
     }
 
     keepCells.forEach((k) => escaping.delete(k));
-    return { escaping, used };
+
+    // じゃまものは にげない。にげる マスの となりに いると よわる。
+    const hurt = new Set();
+    escaping.forEach((k) => {
+      const r = rowOf(k), c = colOf(k);
+      [[r, c], [r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].forEach(([nr, nc]) => {
+        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) return;
+        const tile = grid[nr][nc];
+        if (tile && tile.blocker) hurt.add(key(nr, nc));
+      });
+    });
+    hurt.forEach((k) => escaping.delete(k));
+
+    return { escaping, used, hurt };
   }
 
   /** 1てでも そろえられる いれかえが のこっているか */
@@ -443,6 +522,8 @@
     selected = null;
     score = 0;
     moves = 0;
+    level = 1;
+    rescued = 0;
     lastSwap = [];
     boardEl.innerHTML = '';
     runwayEl.innerHTML = '';
@@ -464,9 +545,71 @@
     busy = false;
   }
 
+  /** つぎの レベルまでに にがす かず */
+  function levelQuota(n) {
+    return LEVEL_BASE + LEVEL_STEP * (n - 1);
+  }
+
+  /** にがした ねこを かぞえて、たまったら レベルアップ */
+  function addRescued(n) {
+    if (!n) return;
+    rescued += n;
+    while (rescued >= levelQuota(level)) {
+      rescued -= levelQuota(level);
+      level += 1;
+      onLevelUp();
+    }
+  }
+
+  function onLevelUp() {
+    bignews('レベル ' + level + '！');
+    const diff = DIFFS[diffKey];
+    const placed = addBlockers(1);
+    say(placed
+      ? 'レベル ' + level + '！ ' + placed + 'が やってきたニャ…'
+      : 'レベル ' + level + ' に なったニャ！');
+    if (!placed && diff.max === 0) say('レベル ' + level + ' に なったニャ！');
+  }
+
+  /** じゃまものを ばんに おく（さいだい数まで）。おいた ものの 名前を かえす。 */
+  function addBlockers(count) {
+    const diff = DIFFS[diffKey];
+    let placed = null;
+    for (let i = 0; i < count; i++) {
+      let onBoard = 0;
+      eachTile((tile) => { if (tile.blocker) onBoard++; });
+      if (onBoard >= diff.max) break;
+
+      // ねこ（どうぐでない）マスの なかから、はしに よりすぎない ところを えらぶ
+      const spots = [];
+      for (let r = 1; r < ROWS - 1; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const tile = grid[r][c];
+          if (tile && !tile.item && !tile.blocker) spots.push(tile);
+        }
+      }
+      if (!spots.length) break;
+
+      const kind = level >= diff.wolfFrom && rand(2) ? 'wolf' : 'dog';
+      const target = spots[rand(spots.length)];
+      makeBlocker(target, kind);
+      target.el.animate(
+        [{ transform: target.el.style.transform + ' scale(.3)', opacity: 0 },
+         { transform: target.el.style.transform + ' scale(1.2)', opacity: 1 },
+         { transform: target.el.style.transform + ' scale(1)', opacity: 1 }],
+        { duration: 420, easing: 'ease-out' }
+      );
+      placed = BLOCKERS[kind].name;
+    }
+    return placed;
+  }
+
   function updateHud() {
     scoreEl.textContent = String(score);
-    movesEl.textContent = 'てすう ' + moves;
+    levelEl.textContent = 'レベル ' + level;
+    const quota = levelQuota(level);
+    gaugeEl.style.width = Math.min(100, Math.round(rescued / quota * 100)) + '%';
+    quotaEl.textContent = 'あと ' + Math.max(0, quota - rescued) + 'ひき にがすと レベル ' + (level + 1);
     if (score > best) {
       best = score;
       try { localStorage.setItem(BEST_KEY, String(best)); } catch (e) { /* ほぞん できなくても つづける */ }
@@ -549,40 +692,114 @@
     });
   }
 
-  /** ねこを 下に つめて、あいた ぶんを 上から ふらせる */
+  /** ねこを 下に つめて、あいた ぶんを 上から ふらせる。
+   *  じゃまものは おちない。その下は ふさがれる ので、ねこは ななめに まわりこんで 入る。
+   *  ※ ばんの なかみ（grid）だけを 先に そろえてから、さいごに まとめて うごかす。
+   *    とちゅうで 絵の いちを 変えると、あとから 来る うごきと ぶつかって ずれる。 */
   function collapseAndRefill() {
-    for (let c = 0; c < COLS; c++) {
-      let write = ROWS - 1;
-      for (let r = ROWS - 1; r >= 0; r--) {
-        const tile = grid[r][c];
-        if (!tile) continue;
-        if (write !== r) {
-          grid[write][c] = tile;
-          grid[r][c] = null;
-          moveTo(tile, write, c, false);
+    const spawned = new Array(COLS).fill(0);
+
+    for (let pass = 0; pass < ROWS * 2; pass++) {
+      let moved = false;
+
+      for (let r = ROWS - 2; r >= 0; r--) {
+        for (let c = 0; c < COLS; c++) {
+          const tile = grid[r][c];
+          if (!tile || tile.blocker) continue;          // じゃまものは うごかない
+          if (!grid[r + 1][c]) {                        // まっすぐ 下へ
+            grid[r + 1][c] = tile;
+            grid[r][c] = null;
+            moved = true;
+          } else if (grid[r + 1][c].blocker) {          // ふさがれて いたら ななめへ まわりこむ
+            const dirs = rand(2) ? [-1, 1] : [1, -1];
+            for (const d of dirs) {
+              const nc = c + d;
+              if (nc < 0 || nc >= COLS || grid[r + 1][nc]) continue;
+              grid[r + 1][nc] = tile;
+              grid[r][c] = null;
+              moved = true;
+              break;
+            }
+          }
         }
-        write--;
       }
-      const missing = write + 1;
-      for (let r = write; r >= 0; r--) {
+
+      // いちばん上が あいていたら、画面の 外から ねこが おりてくる
+      for (let c = 0; c < COLS; c++) {
+        if (grid[0][c]) continue;
+        const tile = createTile(rand(typeCount));
+        grid[0][c] = tile;
+        spawned[c]++;
+        moveTo(tile, -spawned[c], c, true);   // まずは 画面の そとに おく
+        moved = true;
+      }
+
+      if (!moved) break;
+    }
+
+    // じゃまものに かこまれて どこからも 入れない マスには、その場に ねこが やってくる
+    const popped = [];
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (grid[r][c]) continue;
         const tile = createTile(rand(typeCount));
         grid[r][c] = tile;
-        moveTo(tile, r - missing, c, true); // ばんの 上（画面の そと）から
-        const target = r;
-        requestAnimationFrame(() => moveTo(tile, target, c, false));
+        moveTo(tile, r, c, true);
+        popped.push(tile);
       }
     }
+
+    // さいごに、ぜんぶの ねこを 正しい マスへ うごかす
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const tile = grid[r][c];
+        if (tile && (tile.r !== r || tile.c !== c)) moveTo(tile, r, c, false);
+      }
+    }
+
+    popped.forEach((tile) => {
+      tile.el.animate(
+        [{ transform: tile.el.style.transform + ' scale(.2)', opacity: 0 },
+         { transform: tile.el.style.transform + ' scale(1)', opacity: 1 }],
+        { duration: FALL_MS, easing: 'ease-out' }
+      );
+    });
   }
 
   /** ひかり → てんすう → ねこが はしる → どうぐを のこす、までを まとめて やる */
-  async function runEscape(escaping, used, newItems, chain) {
+  async function runEscape(escaping, used, newItems, chain, hurt) {
     used.forEach((u) => blast(u.kind, u.r, u.c));
 
+    // じゃまものを よわらせる。たいりょくが なくなったら いっしょに にげていく。
+    let beaten = 0;
+    (hurt || new Set()).forEach((k) => {
+      const foe = tileAtKey(k);
+      if (!foe || !foe.blocker) return;
+      foe.hp -= 1;
+      if (foe.hp > 0) {
+        paint(foe);
+        foe.el.animate(
+          [{ transform: foe.el.style.transform + ' translateX(0)' },
+           { transform: foe.el.style.transform + ' translateX(-10%)' },
+           { transform: foe.el.style.transform + ' translateX(8%)' },
+           { transform: foe.el.style.transform + ' translateX(0)' }],
+          { duration: 260, easing: 'ease-in-out' }
+        );
+      } else {
+        beaten++;
+        escaping.add(k);     // おいはらえた
+      }
+    });
+
     const tiles = [...escaping].map((k) => tileAtKey(k)).filter(Boolean);
-    score += (tiles.length * 10 + newItems.length * 50) * chain;
+    const cats = tiles.filter((t) => !t.blocker && !t.item).length;
+    score += (tiles.length * 10 + newItems.length * 50 + beaten * 100) * chain;
+    addRescued(cats);
     updateHud();
 
-    if (used.length) {
+    if (beaten) {
+      say(beaten === 1 ? 'じゃまものを おいはらった！' : 'じゃまものを ' + beaten + 'ひき おいはらった！');
+    } else if (used.length) {
       const what = [...new Set(used.map((u) => ITEMS[u.kind].what))].join('と');
       say(what + 'が にげた！');
     } else if (newItems.length) {
@@ -627,8 +844,8 @@
     moves++;
     updateHud();
 
-    const { escaping, used } = spreadEscape([key(item.r, item.c)], new Set());
-    await runEscape(escaping, used, [], 1);
+    const { escaping, used, hurt } = spreadEscape([key(item.r, item.c)], new Set());
+    await runEscape(escaping, used, [], 1, hurt);
     await sleep(ESCAPE_HOLD);
     collapseAndRefill();
     await sleep(FALL_MS + 60);
@@ -656,9 +873,9 @@
       });
 
       const keepCells = new Set(newItems.map((item) => item.at));
-      const { escaping, used } = spreadEscape([...matched], keepCells);
+      const { escaping, used, hurt } = spreadEscape([...matched], keepCells);
 
-      await runEscape(escaping, used, newItems, chain);
+      await runEscape(escaping, used, newItems, chain, hurt);
       await sleep(ESCAPE_HOLD);
       collapseAndRefill();
       await sleep(FALL_MS + 60);
@@ -673,19 +890,21 @@
   /** てづまりに なったら ならびなおす */
   async function reshuffle() {
     say('うごかせる てが ないので ならびなおすニャ');
-    const tiles = [];
-    eachTile((tile) => tiles.push(tile));
+    const cats = [];
+    eachTile((tile) => { if (!tile.item && !tile.blocker) cats.push(tile); });
+    if (!cats.length) return;
 
     for (let attempt = 0; attempt < 80; attempt++) {
-      const types = tiles.map((tile) => tile.type);
+      const types = cats.map((tile) => tile.type);
       for (let i = types.length - 1; i > 0; i--) {
         const j = rand(i + 1);
         const tmp = types[i]; types[i] = types[j]; types[j] = tmp;
       }
-      const candidate = [];
-      for (let r = 0; r < ROWS; r++) candidate.push(types.slice(r * COLS, (r + 1) * COLS));
+      // ならべかえた ばんめんを ためす（どうぐ／じゃまものの マスは -1 の まま）
+      const candidate = Array.from({ length: ROWS }, () => new Array(COLS).fill(-1));
+      cats.forEach((tile, i) => { candidate[tile.r][tile.c] = types[i]; });
       if (findRuns(candidate).length === 0 && hasMove(candidate)) {
-        tiles.forEach((tile, i) => {
+        cats.forEach((tile, i) => {
           tile.type = types[i];
           paint(tile);
         });
@@ -718,6 +937,16 @@
 
   async function trySwap(a, b) {
     if (busy || !a || !b || !isNeighbor(a, b)) return;
+
+    // じゃまものは うごかない。そばで ねこを にがして おいはらう。
+    if (a.blocker || b.blocker) {
+      const foe = a.blocker ? a : b;
+      selectTile(null);
+      say(BLOCKERS[foe.blocker].name + 'は うごかないニャ。そばで ねこを にがすニャ！');
+      foe.el.classList.add('is-nope');
+      setTimeout(() => foe.el.classList.remove('is-nope'), 260);
+      return;
+    }
 
     // どうぐは そろえなくても、となりの ねこと いれかえるだけで はたらく
     if (a.item) return useItem(a, b);
@@ -828,27 +1057,34 @@
 
   function buildKindChoices() {
     kindChoice.innerHTML = '';
-    [{ n: 4, sub: 'やさしい' }, { n: 5, sub: 'ふつう' }, { n: 6, sub: 'むずかしい' }].forEach((item) => {
+    Object.keys(DIFFS).forEach((dk) => {
+      const diff = DIFFS[dk];
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'cat-choice' + (item.n === typeCount ? ' is-current' : '');
+      btn.className = 'cat-choice' + (dk === diffKey ? ' is-current' : '');
 
       const sample = document.createElement('span');
       sample.className = 'cat-choice__sample';
-      for (let i = 0; i < item.n; i++) {
+      for (let i = 0; i < diff.types; i++) {
         const dot = document.createElement('span');
         dressBody(dot, i);
         sample.appendChild(dot);
       }
+      if (diff.max) {
+        const foe = document.createElement('span');
+        foe.className = 'cat-choice__foe';
+        foe.textContent = BLOCKERS[diff.wolfFrom <= 3 ? 'wolf' : 'dog'].icon;
+        sample.appendChild(foe);
+      }
 
       const name = document.createElement('span');
-      name.textContent = item.n + 'しゅるい';
+      name.textContent = diff.name;
 
       const sub = document.createElement('span');
       sub.className = 'cat-choice__sub';
-      sub.textContent = item.sub;
+      sub.textContent = diff.note;
 
-      if (item.n === typeCount) {
+      if (dk === diffKey) {
         const mark = document.createElement('span');
         mark.className = 'cat-choice__mark';
         mark.textContent = '✔';
@@ -857,14 +1093,19 @@
 
       btn.append(sample, name, sub);
       btn.addEventListener('click', () => {
-        typeCount = item.n;
-        try { localStorage.setItem(KIND_KEY, String(typeCount)); } catch (e) { /* つづける */ }
-        kindSubEl.textContent = typeCount + 'しゅるい';
+        setDiff(dk);
         kindModal.hidden = true;
         newGame();
       });
       kindChoice.appendChild(btn);
     });
+  }
+
+  function setDiff(dk) {
+    diffKey = DIFFS[dk] ? dk : 'normal';
+    typeCount = DIFFS[diffKey].types;
+    kindSubEl.textContent = DIFFS[diffKey].name;
+    try { localStorage.setItem(DIFF_KEY, diffKey); } catch (e) { /* つづける */ }
   }
 
   kindBtn.addEventListener('click', () => {
@@ -881,10 +1122,15 @@
 
   try { best = Number(localStorage.getItem(BEST_KEY)) || 0; } catch (e) { best = 0; }
   try {
-    const saved = Number(localStorage.getItem(KIND_KEY));
-    typeCount = [4, 5, 6].includes(saved) ? saved : 5;
-  } catch (e) { typeCount = 5; }
-  kindSubEl.textContent = typeCount + 'しゅるい';
+    const saved = localStorage.getItem(DIFF_KEY);
+    if (DIFFS[saved]) {
+      setDiff(saved);
+    } else {
+      // ふるい ほぞん（ねこの しゅるい数）から ひきつぐ
+      const kinds = Number(localStorage.getItem(KIND_KEY));
+      setDiff(kinds === 4 ? 'easy' : (kinds === 6 ? 'hard' : 'normal'));
+    }
+  } catch (e) { setDiff('normal'); }
 
   loadImages();
   newGame();

@@ -96,6 +96,31 @@ body {
   white-space: nowrap;
 }
 
+/* つぎの レベルまでの バー（前作と おなじ かたち） */
+.gauge {
+  margin: 8px auto 0;
+  max-width: 560px;
+  height: 12px;
+  background: rgba(255, 255, 255, .3);
+  border: 3px solid #ffffff;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.gauge__bar {
+  height: 100%;
+  width: 0%;
+  background: var(--c-accent);
+  transition: width .4s ease;
+}
+
+.quota {
+  margin: 4px 0 0;
+  text-align: center;
+  font-size: clamp(12px, 3vw, 16px);
+  color: #d7e6da;
+}
+
 .message {
   margin: 10px 0 0;
   text-align: center;
@@ -270,6 +295,61 @@ body {
   justify-content: center;
   font-size: 60%;
 }
+
+/* ========== じゃまもの（いぬ・おおかみ） ========== */
+.cat--blocker .cat__body { display: none; }
+
+/* ねこと 見まちがえない よう、くすんだ 四角い 台に のせる */
+.cat--blocker::before {
+  content: "";
+  position: absolute;
+  inset: 5%;
+  border-radius: 24%;
+  background: #8d8378;
+  border: 3px solid #4a443d;
+  box-shadow: inset 0 -5% 0 rgba(0, 0, 0, .2);
+}
+
+.cat__foe {
+  position: absolute;
+  inset: 8% 8% 24% 8%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--cell) * .44);
+  line-height: 1;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .4));
+  pointer-events: none;
+}
+
+.cat__foe--image { color: transparent; }
+
+/* のこりの たいりょく */
+.cat__hp {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 9%;
+  display: flex;
+  justify-content: center;
+  gap: 6%;
+  pointer-events: none;
+}
+
+.cat__hp i {
+  width: 13%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .35);
+  border: 1px solid rgba(0, 0, 0, .4);
+}
+
+.cat__hp i.is-on { background: #ffc14d; }
+
+.cat-choice__foe { font-size: 1.15em; line-height: 1; align-self: center; }
 
 /* どうぐが はたらいた ところの ひかり */
 .blast {
@@ -531,6 +611,9 @@ body {
 
 @media (max-height: 480px) {
   :root { --fs-message: 16px; --fs-button: 20px; }
+
+  .quota { display: none; }        /* バーだけ のこす */
+  .gauge { height: 8px; border-width: 2px; margin-top: 5px; }
 
   .header { padding: 6px 12px 8px; }
   .status { gap: 8px; }
