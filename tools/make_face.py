@@ -4,16 +4,23 @@
 
 ・白ベタ／市松模様の背景を、外周から判定して透過にする
   （目のハイライトのように、まわりを囲まれた白は残す）
+・1枚に何匹か ならんだ グリッド画像なら、すきまを見つけて 1匹ずつに 切り分ける
+  （ひげが 顔から はなれていても、同じマスの ものは いっしょに 切り出す）
 ・顔のまわりを切りつめてから、正方形の中央にそろえて余白をつける
 ・512×512ピクセルのPNGとして書き出す
 
 つかいかた:
-    python3 tools/make_face.py 出力先ディレクトリ 入力1.jpg:出力名1 入力2.png:出力名2 ...
-例:
+    python3 tools/make_face.py 出力先ディレクトリ 入力:出力名[,出力名...] ...
+
+例（1匹ずつの画像）:
     python3 tools/make_face.py app/images kuro.jpg:face-kuro chashiro.jpg:face-chashiro
+
+例（3列×2行に5匹ならんだ1枚。左上から右へ、の順に名前を書く）:
+    python3 tools/make_face.py app/images grid.jpg:face-kuro,face-chashiro,face-kijitora,face-hachiware,face-mike
 
 必要なもの: pillow, numpy （pip install pillow numpy）
 """
+import os
 import sys
 from collections import deque
 
@@ -23,6 +30,7 @@ from PIL import Image, ImageFilter
 SIZE = 512        # 書き出す1枚の大きさ（px）
 FILL = 0.94       # 顔が1枚のなかで占める割合（のこりが余白）
 TOLERANCE = 26    # 背景とみなす色の近さ（大きいほど よく抜けるが、猫も削れる）
+MIN_PART = 0.004  # これより小さい かたまりは ゴミとみなす（画像全体に対する面積の割合）
 
 
 def background_alpha(path):
@@ -76,6 +84,53 @@ def background_alpha(path):
     return out
 
 
+def bands(has_content, min_gap):
+    """中身のある ところを、min_gap いじょう あいた すきまで 区切って かえす。"""
+    spans, start = [], None
+    gap = 0
+    for i, on in enumerate(has_content):
+        if on:
+            if start is None:
+                start = i
+            elif gap:
+                pass
+            gap = 0
+        else:
+            if start is not None:
+                gap += 1
+                if gap >= min_gap:
+                    spans.append((start, i - gap + 1))
+                    start = None
+                    gap = 0
+    if start is not None:
+        spans.append((start, len(has_content)))
+    return [(a, b) for a, b in spans if b > a]
+
+
+def split_cells(img, want):
+    """1枚に ならんだ 絵を、want 個の マスに 切り分ける（左上から 右へ、の順）。"""
+    alpha = np.asarray(img.getchannel('A')) > 12
+    h, w = alpha.shape
+    if want <= 1:
+        return [img]
+
+    # すきまの 広さを だんだん ゆるめながら、ちょうど want 個に 分かれる ところを さがす
+    for frac in (0.09, 0.07, 0.055, 0.045, 0.035, 0.028, 0.022, 0.018, 0.014, 0.01):
+        rows = bands(alpha.any(axis=1), max(2, int(h * frac)))
+        cells = []
+        for top, bottom in rows:
+            strip = alpha[top:bottom]
+            for left, right in bands(strip.any(axis=0), max(2, int(w * frac))):
+                cells.append((top, bottom, left, right))
+        big = [c for c in cells
+               if (c[1] - c[0]) * (c[3] - c[2]) > h * w * MIN_PART]
+        if len(big) == want:
+            return [img.crop((left, top, right, bottom)) for top, bottom, left, right in big]
+
+    raise SystemExit(f'× {want}個に 分けられませんでした。'
+                     'マスの すきまを 広めに して 作りなおすか、1匹ずつ 渡してください。')
+
+
 def square(img):
     """中身を切りつめて、正方形の中央に FILL の割合でおさめる。"""
     box = img.getbbox()                    # 透明でないところの わく
@@ -92,14 +147,18 @@ def main():
         print(__doc__)
         return 1
     out_dir = sys.argv[1].rstrip('/')
+    os.makedirs(out_dir, exist_ok=True)
     for item in sys.argv[2:]:
-        src, _, name = item.partition(':')
-        if not name:
+        src, _, names = item.partition(':')
+        names = [n for n in names.split(',') if n]
+        if not names:
             print(f'× {item}: 「入力ファイル:出力名」の形で指定してください')
             return 1
-        dst = f'{out_dir}/{name}.png'
-        square(background_alpha(src)).save(dst)
-        print(f'○ {src} → {dst}')
+        whole = background_alpha(src)
+        for img, name in zip(split_cells(whole, len(names)), names):
+            dst = f'{out_dir}/{name}.png'
+            square(img).save(dst)
+            print(f'○ {src} → {dst}')
     return 0
 
 

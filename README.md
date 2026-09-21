@@ -26,7 +26,7 @@
 | `app/manifest.json` | ホーム画面に追加したときの設定（PWA） |
 | `app/images/face-*.png` | 猫の顔の画像5種（くろねこ・ちゃしろ・キジトラ・ハチワレ・みけねこ） |
 | `app/images/tool-*.png` | どうぐの画像4種（まだ無し。いまは絵文字で表示） |
-| `tools/make_face.py` | 生成AIが出した顔の画像を、背景除去＋正方形＋512pxに整える |
+| `tools/make_face.py` | 生成AIが出した顔の画像を、背景除去＋グリッドの切り分け＋正方形＋512pxに整える |
 | `docs/asset-prompts.md` | 猫の顔を画像生成AIで作るときのプロンプト |
 
 ## 遊びかた
@@ -56,9 +56,13 @@
 5種類とも差し替えずみです（Gemini で生成 → `tools/make_face.py` で背景除去・512px化）。
 描き直すときも手順は同じです。
 
-1. 生成した画像を `tools/make_face.py` に通す（背景除去・正方形・512px化）。
+1. 生成した画像を `tools/make_face.py` に通す（背景除去・切り出し・正方形・512px化）。
+   5匹を1枚のグリッドで作らせると画風がそろいます。切り分けは自動です。
    ```
    pip install pillow numpy
+   # 3列×2行のグリッド1枚を、左上から右へ の順に5枚へ切り分ける
+   python3 tools/make_face.py app/images grid.jpg:face-kuro,face-chashiro,face-kijitora,face-hachiware,face-mike
+   # 1匹ずつの画像でも これまでどおり
    python3 tools/make_face.py app/images chashiro.jpg:face-chashiro
    ```
 2. `app/main.js` 冒頭の `CAT_TYPES` の `image` にパスを書く。
