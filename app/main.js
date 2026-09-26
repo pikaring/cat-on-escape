@@ -12,6 +12,9 @@
  *   - どうぐは となりの ねこと いれかえると つかえる。
  *     となりの ねこが にげた ときにも いっしょに はたらく（どうぐ同士で つながる）
  *   - あいた ところには 上から あたらしい ねこが ふってくる（れんさ あり）
+ *   - 1レベル＝1ステージ。きめられた て数の うちに めあての かずを にがせば クリア。
+ *     クリアする たびに 「つぎへ」か「きょうは ここまで」を えらべる（くぎりが つく）。
+ *     すすんだ レベルは むずかしさごとに おぼえて いて、つぎに ひらくと つづきから。
  *
  * ねこの 絵の さしかえ
  *   CAT_TYPES の image に 画像の パスを いれるだけ。よみこめた ときだけ 画像に なり、
@@ -35,13 +38,21 @@
   const BLAST_MS = 420;     // どうぐが はたらく ときの ひかり（style.css の --blast-ms）
   const ESCAPE_HOLD = 230;  // はしりだしてから ばんを つめるまで
 
-  const BEST_KEY = 'catonescape.best';
+  const BEST_KEY = 'catonescape.best';     // 1ステージの さいこう とくてん
   const KIND_KEY = 'catonescape.kinds';   // ふるい ほぞん（ねこの しゅるい数）からの ひきつぎ用
   const DIFF_KEY = 'catonescape.diff';
+  const PROG_KEY = 'catonescape.progress'; // むずかしさごとの すすみ { easy: { level, stars: { 1: 3, … } }, … }
 
-  // レベル：にがした ねこの かずが たまると 上がる
-  const LEVEL_BASE = 40;    // レベル1→2 に ひつような かず
-  const LEVEL_STEP = 15;    // レベルが 上がる ごとに ふえる かず
+  // レベル（ステージ）：MOVES て の うちに めあての かずを にがせば クリア。
+  // めあて ＝ むずかしさの rate（1てで にげる ねこの めやす）× MOVES × きつさ。
+  // きつさは レベル1の GOAL_START から GOAL_STEP ずつ 上がり、GOAL_TOP で とまる。
+  const MOVES = 15;         // 1ステージの て数
+  const GOAL_START = 0.45;  // レベル1の きつさ（てきとうに うっても 半分の て で とどく）
+  const GOAL_STEP = 0.03;   // レベルが 1つ 上がる ごとに ふえる きつさ
+  const GOAL_TOP = 1.0;     // きつさの 上限（レベル20〜。てきとうに うつと 半分くらい とどかない）
+  const MOVE_BONUS = 50;    // クリアした ときに のこった て 1つぶんの ボーナス
+  const STAR2 = 0.2;        // のこり て が この わりあい いじょうで ★2
+  const STAR3 = 0.4;        // のこり て が この わりあい いじょうで ★3
 
   /** ねこの しゅるい。image に 'images/face-kuro.png' のような パスを いれると 画像に なる。 */
   const CAT_TYPES = [
@@ -68,11 +79,12 @@
     wolf: { name: 'おおかみ', icon: '🐺', hp: 3, image: 'images/foe-wolf.png' },
   };
 
-  /** むずかしさ。じゃまものは レベルが 上がる ごとに 1つずつ ふえる（max まで）。 */
+  /** むずかしさ。rate は 1てで にげる ねこの めやす（しゅるいが すくないほど れんさで たくさん にげる）。
+   *  じゃまものは foeFrom の レベルから 1ぴき、そこから foeEvery レベルごとに 1ぴきずつ ふえる（max まで）。 */
   const DIFFS = {
-    easy:   { name: 'やさしい',   note: 'ねこ4しゅるい・じゃまもの なし', types: 4, max: 0, wolfFrom: 99 },
-    normal: { name: 'ふつう',     note: 'ねこ5しゅるい・いぬ さいだい2',  types: 5, max: 2, wolfFrom: 5 },
-    hard:   { name: 'むずかしい', note: 'ねこ6しゅるい・じゃまもの さいだい3', types: 6, max: 3, wolfFrom: 3 },
+    easy:   { name: 'やさしい',   note: 'ねこ4しゅるい・じゃまもの なし', types: 4, rate: 12, max: 0, foeFrom: 99, foeEvery: 99, wolfFrom: 99 },
+    normal: { name: 'ふつう',     note: 'ねこ5しゅるい・いぬ さいだい2',  types: 5, rate: 7,  max: 2, foeFrom: 3, foeEvery: 3, wolfFrom: 8 },
+    hard:   { name: 'むずかしい', note: 'ねこ6しゅるい・じゃまもの さいだい3', types: 6, rate: 5,  max: 3, foeFrom: 2, foeEvery: 2, wolfFrom: 4 },
   };
 
   const boardEl    = document.getElementById('board');
@@ -92,6 +104,18 @@
   const resetBtn   = document.getElementById('btnReset');
   const kindBtn    = document.getElementById('btnKind');
   const closeBtn   = document.getElementById('btnCloseKind');
+  const movesEl    = document.getElementById('moves');
+  const endModal   = document.getElementById('endModal');
+  const endTitle   = document.getElementById('endTitle');
+  const endStars   = document.getElementById('endStars');
+  const endText    = document.getElementById('endText');
+  const endNext    = document.getElementById('btnEndNext');
+  const endNextTxt = document.getElementById('endNextText');
+  const endRest    = document.getElementById('btnEndRest');
+  const restEl     = document.getElementById('rest');
+  const restText   = document.getElementById('restText');
+  const restBtn    = document.getElementById('btnRestart');
+  const levelOneBtn = document.getElementById('btnLevelOne');
 
   /** grid[r][c] = tile | null */
   let grid = [];
@@ -103,6 +127,8 @@
   let best = 0;
   let level = 1;
   let rescued = 0;          // いまの レベルで にがした ねこの かず
+  let movesLeft = MOVES;    // いまの レベルで のこっている て
+  let progress = {};        // むずかしさごとの すすみ（PROG_KEY）
   let busy = true;
   let selected = null;
   let uid = 0;
@@ -533,14 +559,17 @@
 
   /* ---------------- ゲームの すすみ ---------------- */
 
-  function newGame() {
+  /** いまの レベルを さいしょから はじめる */
+  function startStage() {
     busy = true;
     selected = null;
     score = 0;
     moves = 0;
-    level = 1;
     rescued = 0;
+    movesLeft = movesFor(level);
     lastSwap = [];
+    endModal.hidden = true;
+    restEl.hidden = true;
     boardEl.innerHTML = '';
     runwayEl.innerHTML = '';
 
@@ -556,35 +585,124 @@
     }
 
     layout();
+    const placed = addBlockers(foesFor(level));
     updateHud();
-    say('ねこを すべらせて 3びき そろえるニャ！');
+    bignews('レベル ' + level);
+    say(movesLeft + 'て で ' + levelQuota(level) + 'ひき にがすニャ！' + (placed ? '（' + placed + 'が いるニャ）' : ''));
     busy = false;
   }
 
-  /** つぎの レベルまでに にがす かず */
+  /** そのレベルで にがす かず */
   function levelQuota(n) {
-    return LEVEL_BASE + LEVEL_STEP * (n - 1);
+    const tight = Math.min(GOAL_TOP, GOAL_START + GOAL_STEP * (n - 1));
+    return Math.max(10, Math.round(DIFFS[diffKey].rate * MOVES * tight / 5) * 5);
   }
 
-  /** にがした ねこを かぞえて、たまったら レベルアップ */
-  function addRescued(n) {
-    if (!n) return;
-    rescued += n;
-    while (rescued >= levelQuota(level)) {
-      rescued -= levelQuota(level);
-      level += 1;
-      onLevelUp();
-    }
+  /** そのレベルの て数 */
+  function movesFor() {
+    return MOVES;
   }
 
-  function onLevelUp() {
-    bignews('レベル ' + level + '！');
+  /** そのレベルの はじめに いる じゃまものの かず */
+  function foesFor(n) {
     const diff = DIFFS[diffKey];
-    const placed = addBlockers(1);
-    say(placed
-      ? 'レベル ' + level + '！ ' + placed + 'が やってきたニャ…'
-      : 'レベル ' + level + ' に なったニャ！');
-    if (!placed && diff.max === 0) say('レベル ' + level + ' に なったニャ！');
+    if (n < diff.foeFrom) return 0;
+    return Math.min(diff.max, 1 + Math.floor((n - diff.foeFrom) / diff.foeEvery));
+  }
+
+  /** にがした ねこを かぞえる */
+  function addRescued(n) {
+    rescued += n;
+  }
+
+  /* ---------------- レベルの おわり（クリア／ざんねん） ---------------- */
+
+  function starsFor(left, total) {
+    if (left >= total * STAR3) return 3;
+    if (left >= total * STAR2) return 2;
+    return 1;
+  }
+
+  function loadProgress() {
+    try { progress = JSON.parse(localStorage.getItem(PROG_KEY)) || {}; } catch (e) { progress = {}; }
+    if (typeof progress !== 'object' || Array.isArray(progress)) progress = {};
+  }
+
+  function saveProgress() {
+    try { localStorage.setItem(PROG_KEY, JSON.stringify(progress)); } catch (e) { /* つづける */ }
+  }
+
+  function progOf(dk) {
+    const p = progress[dk];
+    if (!p || typeof p !== 'object') progress[dk] = { level: 1, stars: {} };
+    const q = progress[dk];
+    if (!(q.level >= 1)) q.level = 1;
+    if (!q.stars || typeof q.stars !== 'object') q.stars = {};
+    return q;
+  }
+
+  function totalStars(dk) {
+    return Object.values(progOf(dk).stars).reduce((a, b) => a + (Number(b) || 0), 0);
+  }
+
+  /** 1て おわる ごとに よぶ。クリアか、て が なくなったら おしまい。 */
+  function checkStageEnd() {
+    if (rescued >= levelQuota(level)) {
+      stageClear();
+      return true;
+    }
+    if (movesLeft <= 0) {
+      stageFail();
+      return true;
+    }
+    return false;
+  }
+
+  function stageClear() {
+    busy = true;
+    const total = movesFor(level);
+    const stars = starsFor(movesLeft, total);
+    const bonus = movesLeft * MOVE_BONUS;
+    score += bonus;
+    updateHud();
+
+    const p = progOf(diffKey);
+    p.stars[level] = Math.max(Number(p.stars[level]) || 0, stars);
+    p.level = Math.max(p.level, level + 1);
+    saveProgress();
+
+    endTitle.textContent = 'レベル ' + level + ' クリア！';
+    endStars.textContent = '★'.repeat(stars) + '☆'.repeat(3 - stars);
+    endStars.hidden = false;
+    endText.textContent = rescued + 'ひき にがした！\n' +
+      'のこり ' + movesLeft + 'て ボーナス +' + bonus + '\n' +
+      'とくてん ' + score + '　／　ほし ぜんぶで ★' + totalStars(diffKey);
+    endNextTxt.textContent = 'つぎの レベルへ';
+    endNext.dataset.go = 'next';
+    say('レベル ' + level + ' クリア！ よく がんばったニャ');
+    setTimeout(() => { endModal.hidden = false; endNext.focus(); }, 500);
+  }
+
+  function stageFail() {
+    busy = true;
+    const left = levelQuota(level) - rescued;
+    endTitle.textContent = 'て が なくなったニャ';
+    endStars.hidden = true;
+    endText.textContent = 'あと ' + left + 'ひき だったニャ。\nもういちど やってみるニャ？';
+    endNextTxt.textContent = 'もういちど';
+    endNext.dataset.go = 'retry';
+    say('あと ' + left + 'ひき だったニャ…');
+    setTimeout(() => { endModal.hidden = false; endNext.focus(); }, 500);
+  }
+
+  /** 「きょうは ここまで」：ばんを とめて、つぎに あそぶ レベルを しらせる */
+  function rest() {
+    endModal.hidden = true;
+    busy = true;
+    const next = progOf(diffKey).level;
+    restText.textContent = 'つぎは レベル ' + next + ' から あそべるニャ。\nまた きてニャ〜';
+    restEl.hidden = false;
+    say('おつかれさまニャ 🐾');
   }
 
   /** じゃまものを ばんに おく（さいだい数まで）。おいた ものの 名前を かえす。 */
@@ -625,7 +743,11 @@
     levelEl.textContent = 'レベル ' + level;
     const quota = levelQuota(level);
     gaugeEl.style.width = Math.min(100, Math.round(rescued / quota * 100)) + '%';
-    quotaEl.textContent = 'あと ' + Math.max(0, quota - rescued) + 'ひき にがすと レベル ' + (level + 1);
+    quotaEl.textContent = rescued >= quota
+      ? 'めあて たっせい！'
+      : 'あと ' + (quota - rescued) + 'ひき にがすと クリア';
+    movesEl.textContent = 'のこり ' + movesLeft + 'て';
+    movesEl.classList.toggle('is-low', movesLeft <= 3);
     if (score > best) {
       best = score;
       try { localStorage.setItem(BEST_KEY, String(best)); } catch (e) { /* ほぞん できなくても つづける */ }
@@ -858,6 +980,7 @@
     swapTiles(item, other);
     await sleep(SWAP_MS);
     moves++;
+    movesLeft--;
     updateHud();
 
     const { escaping, used, hurt } = spreadEscape([key(item.r, item.c)], new Set());
@@ -867,7 +990,7 @@
     await sleep(FALL_MS + 60);
 
     await resolveBoard();   // おちてきた ねこで そろえば れんさ
-    busy = false;
+    if (!checkStageEnd()) busy = false;
   }
 
   /** そろい → どうぐ → にげる → おちる を れんさが とまるまで くりかえす */
@@ -977,9 +1100,11 @@
     if (findRuns(typeGrid()).length) {
       lastSwap = [key(a.r, a.c), key(b.r, b.c)];
       moves++;
+      movesLeft--;
       updateHud();
       await resolveBoard();
       lastSwap = [];
+      if (checkStageEnd()) return;
     } else {
       swapTiles(a, b);
       a.el.classList.add('is-nope');
@@ -1107,11 +1232,16 @@
         btn.appendChild(mark);
       }
 
-      btn.append(sample, name, sub);
+      const prog = document.createElement('span');
+      prog.className = 'cat-choice__sub';
+      prog.textContent = 'レベル ' + progOf(dk).level + '　★' + totalStars(dk);
+
+      btn.append(sample, name, sub, prog);
       btn.addEventListener('click', () => {
         setDiff(dk);
         kindModal.hidden = true;
-        newGame();
+        level = progOf(dk).level;
+        startStage();
       });
       kindChoice.appendChild(btn);
     });
@@ -1129,14 +1259,31 @@
     kindModal.hidden = false;
   });
   closeBtn.addEventListener('click', () => { kindModal.hidden = true; });
+  levelOneBtn.addEventListener('click', () => {
+    kindModal.hidden = true;
+    level = 1;
+    startStage();
+  });
   kindModal.addEventListener('click', (e) => { if (e.target === kindModal) kindModal.hidden = true; });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') kindModal.hidden = true; });
 
-  resetBtn.addEventListener('click', newGame);
+  resetBtn.addEventListener('click', () => {
+    if (!busy || !restEl.hidden || !endModal.hidden) startStage();
+  });
+  endNext.addEventListener('click', () => {
+    if (endNext.dataset.go === 'next') level += 1;
+    startStage();
+  });
+  endRest.addEventListener('click', rest);
+  restBtn.addEventListener('click', () => {
+    level = progOf(diffKey).level;
+    startStage();
+  });
   window.addEventListener('resize', layout);
   window.addEventListener('orientationchange', layout);
 
   try { best = Number(localStorage.getItem(BEST_KEY)) || 0; } catch (e) { best = 0; }
+  loadProgress();
   try {
     const saved = localStorage.getItem(DIFF_KEY);
     if (DIFFS[saved]) {
@@ -1149,5 +1296,6 @@
   } catch (e) { setDiff('normal'); }
 
   loadImages();
-  newGame();
+  level = progOf(diffKey).level;   // つづきから
+  startStage();
 })();
