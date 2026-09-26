@@ -28,14 +28,15 @@
       <span class="status__label">スコア</span>
       <span class="status__value" id="score">0</span>
       <span class="status__level" id="level">レベル 1</span>
+      <span class="status__level status__moves" id="moves">のこり 20て</span>
       <span class="status__level" id="best">さいこう 0</span>
     </div>
 
-    <!-- つぎの レベルまで（にがした ねこの かず） -->
+    <!-- クリアまで（にがした ねこの かず） -->
     <div class="gauge" aria-hidden="true">
       <div class="gauge__bar" id="gaugeBar"></div>
     </div>
-    <p class="quota" id="quota">あと 40ひき にがすと レベル 2</p>
+    <p class="quota" id="quota">あと 24ひき にがすと クリア</p>
 
     <p class="message" id="message" role="status" aria-live="polite">よこか たてに 3びき そろえるニャ！</p>
   </header>
@@ -43,13 +44,24 @@
   <!-- ===== メインビュー：ねこの ばん ===== -->
   <main class="board-area" id="boardArea">
     <div class="board" id="board" role="grid" aria-label="ねこの ばん"></div>
+
+    <!-- 「きょうは ここまで」の あとの おやすみ がめん -->
+    <div class="rest" id="rest" hidden>
+      <div class="rest__panel">
+        <p class="rest__icon" aria-hidden="true">😴</p>
+        <p class="rest__text" id="restText"></p>
+        <button type="button" class="btn btn--kind" id="btnRestart">
+          <span class="btn__text">つづきから あそぶ</span>
+        </button>
+      </div>
+    </div>
   </main>
 
   <!-- ===== したの おおきな ボタン ===== -->
   <footer class="actions">
     <button type="button" class="btn btn--again" id="btnReset">
       <span class="btn__icon" aria-hidden="true">🔄</span>
-      <span class="btn__text">はじめから</span>
+      <span class="btn__text">やりなおす</span>
     </button>
     <button type="button" class="btn btn--kind" id="btnKind">
       <span class="btn__icon" aria-hidden="true">🐾</span>
@@ -66,11 +78,35 @@
 
       <div class="cat-choices" id="kindChoices"></div>
 
-      <p class="modal__note">えらびなおすと さいしょから はじまります</p>
+      <p class="modal__note">むずかしさごとに すすんだ レベルを おぼえています</p>
+
+      <button type="button" class="btn btn--again btn--wide" id="btnLevelOne">
+        <span class="btn__text">レベル 1 から あそぶ</span>
+      </button>
 
       <button type="button" class="btn btn--close" id="btnCloseKind">
         <span class="btn__text">とじる</span>
       </button>
+
+    </div>
+  </div>
+
+  <!-- ===== レベルの おわり（クリア／て が なくなった） ===== -->
+  <div class="modal" id="endModal" hidden>
+    <div class="modal__panel modal__panel--end" role="dialog" aria-modal="true" aria-labelledby="endTitle">
+
+      <h2 class="modal__title" id="endTitle">レベル 1 クリア！</h2>
+      <p class="end__stars" id="endStars" aria-label="ほし">★★★</p>
+      <p class="end__text" id="endText"></p>
+
+      <div class="end__actions">
+        <button type="button" class="btn btn--kind" id="btnEndNext">
+          <span class="btn__text" id="endNextText">つぎの レベルへ</span>
+        </button>
+        <button type="button" class="btn btn--close" id="btnEndRest">
+          <span class="btn__text">きょうは ここまで</span>
+        </button>
+      </div>
 
     </div>
   </div>
