@@ -911,9 +911,11 @@
     busy = true;
     const left = Math.max(0, levelQuota(level) - rescued);
     const foesLeft = countFoes();
+    // 「もういちど」は あたらしい ばんから（手づまりぎみの ばんを ひきつがない）。
+    // とじて ひらいた ときも あたらしい ばんに なる よう、ほぞんした ばんも けす
     const p = curProg();
-    if (p.level === level) {
-      p.board = { level, cells: snapshot() };
+    if (p.level === level && p.board) {
+      p.board = null;
       saveCur();
     }
     endTitle.textContent = 'て が なくなったニャ';
@@ -1662,8 +1664,9 @@
   });
   endNext.addEventListener('click', () => {
     if (mode === 'story' && endNext.dataset.go === 'next') { storyNext(); return; }
-    if (endNext.dataset.go === 'next') level += 1;
-    startStage(snapshot());   // いまの ばんを そのまま ひきつぐ
+    if (endNext.dataset.go === 'retry') { startStage(null); return; }   // もういちど：あたらしい ばん
+    level += 1;
+    startStage(snapshot());   // つぎの レベル：いまの ばんを そのまま ひきつぐ
   });
   endRest.addEventListener('click', rest);
   restBtn.addEventListener('click', () => {
