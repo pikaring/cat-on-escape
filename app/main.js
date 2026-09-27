@@ -15,6 +15,8 @@
  *   - 1レベル＝1ステージ。きめられた て数の うちに めあての かずを にがせば クリア。
  *     クリアする たびに 「つぎへ」か「きょうは ここまで」を えらべる（くぎりが つく）。
  *     すすんだ レベルは むずかしさごとに おぼえて いて、つぎに ひらくと つづきから。
+ *   - つぎの レベル（や もういちど）は、おわった ときの ばんを そのまま ひきつぐ。
+ *     ばんは むずかしさごとに ほぞんして、とじて ひらいても おなじ ばんから つづく。
  *
  * ねこの 絵の さしかえ
  *   CAT_TYPES の image に 画像の パスを いれるだけ。よみこめた ときだけ 画像に なり、
@@ -41,7 +43,7 @@
   const BEST_KEY = 'catonescape.best';     // 1ステージの さいこう とくてん
   const KIND_KEY = 'catonescape.kinds';   // ふるい ほぞん（ねこの しゅるい数）からの ひきつぎ用
   const DIFF_KEY = 'catonescape.diff';
-  const PROG_KEY = 'catonescape.progress'; // むずかしさごとの すすみ { easy: { level, stars: { 1: 3, … } }, … }
+  const PROG_KEY = 'catonescape.progress'; // むずかしさごとの すすみ { easy: { level, stars: { 1: 3, … }, board }, … }
 
   // レベル（ステージ）：MOVES て の うちに めあての かずを にがせば クリア。
   // めあて ＝ むずかしさの rate（1てで にげる ねこの めやす）× MOVES × きつさ。
@@ -559,8 +561,9 @@
 
   /* ---------------- ゲームの すすみ ---------------- */
 
-  /** いまの レベルを さいしょから はじめる */
-  function startStage() {
+  /** いまの レベルを はじめる。board（snapshot() の かたち）を わたすと その ばんを ひきつぐ。
+   *  わたさない ときは あたらしい ばんに する。 */
+  function startStage(board) {
     busy = true;
     selected = null;
     score = 0;
@@ -573,23 +576,71 @@
     boardEl.innerHTML = '';
     runwayEl.innerHTML = '';
 
-    const types = makeTypes();
+    const keep = validBoard(board);
+    const types = keep ? null : makeTypes();
     grid = [];
     for (let r = 0; r < ROWS; r++) {
       grid.push([]);
       for (let c = 0; c < COLS; c++) {
-        const tile = createTile(types[r][c]);
+        let tile;
+        if (keep) {
+          const [type, item, blocker, hp] = board[r][c];
+          tile = createTile(type);
+          if (blocker) {
+            makeBlocker(tile, blocker);
+            tile.hp = Math.max(1, Math.min(BLOCKERS[blocker].hp, hp));
+            paint(tile);
+          } else if (item) {
+            tile.item = item;
+            paint(tile);
+          }
+        } else {
+          tile = createTile(types[r][c]);
+        }
         grid[r].push(tile);
         moveTo(tile, r, c, true);
       }
     }
 
     layout();
-    const placed = addBlockers(foesFor(level));
+    let onBoard = 0;
+    eachTile((tile) => { if (tile.blocker) onBoard++; });
+    const placed = addBlockers(Math.max(0, foesFor(level) - onBoard));
+
+    // いちばん すすんだ レベルなら、はじめの ばんを ほぞん（とじて ひらいても この ばんから）
+    const p = progOf(diffKey);
+    if (p.level === level) {
+      p.board = { level, cells: snapshot() };
+      saveProgress();
+    }
     updateHud();
     bignews('レベル ' + level);
-    say(movesLeft + 'て で ' + levelQuota(level) + 'ひき にがすニャ！' + (placed ? '（' + placed + 'が いるニャ）' : ''));
+    say(movesLeft + 'て で ' + levelQuota(level) + 'ひき にがすニャ！' + (placed ? '（' + placed + 'が やってきたニャ）' : ''));
     busy = false;
+    // ひきついだ ばんで うごかせる てが なければ ならびなおす
+    if (keep && !hasMove(typeGrid()) && !anyItem()) {
+      busy = true;
+      reshuffle().then(() => { busy = false; });
+    }
+  }
+
+  /** いまの ばんを ほぞんできる かたちに する：[しゅるい, どうぐ, じゃまもの, たいりょく] */
+  function snapshot() {
+    return grid.map((row) => row.map((t) => [t.type, t.item || 0, t.blocker || 0, t.hp || 0]));
+  }
+
+  /** ほぞんした ばんが いまの むずかしさで つかえるか */
+  function validBoard(board) {
+    if (!Array.isArray(board) || board.length !== ROWS) return false;
+    return board.every((row) => Array.isArray(row) && row.length === COLS && row.every((v) =>
+      Array.isArray(v) && Number.isInteger(v[0]) && v[0] >= 0 && v[0] < typeCount &&
+      (!v[1] || ITEMS[v[1]]) && (!v[2] || BLOCKERS[v[2]])));
+  }
+
+  /** そのレベルを はじめる ときに ひきつぐ ばん（なければ null） */
+  function savedBoard(dk, lv) {
+    const b = progOf(dk).board;
+    return b && b.level === lv ? b.cells : null;
   }
 
   /** そのレベルで にがす かず */
@@ -669,6 +720,7 @@
     const p = progOf(diffKey);
     p.stars[level] = Math.max(Number(p.stars[level]) || 0, stars);
     p.level = Math.max(p.level, level + 1);
+    if (p.level === level + 1) p.board = { level: level + 1, cells: snapshot() };
     saveProgress();
 
     endTitle.textContent = 'レベル ' + level + ' クリア！';
@@ -686,6 +738,11 @@
   function stageFail() {
     busy = true;
     const left = levelQuota(level) - rescued;
+    const p = progOf(diffKey);
+    if (p.level === level) {
+      p.board = { level, cells: snapshot() };
+      saveProgress();
+    }
     endTitle.textContent = 'て が なくなったニャ';
     endStars.hidden = true;
     endText.textContent = 'あと ' + left + 'ひき だったニャ。\nもういちど やってみるニャ？';
@@ -1241,7 +1298,7 @@
         setDiff(dk);
         kindModal.hidden = true;
         level = progOf(dk).level;
-        startStage();
+        startStage(savedBoard(dk, level));
       });
       kindChoice.appendChild(btn);
     });
@@ -1272,12 +1329,12 @@
   });
   endNext.addEventListener('click', () => {
     if (endNext.dataset.go === 'next') level += 1;
-    startStage();
+    startStage(snapshot());   // いまの ばんを そのまま ひきつぐ
   });
   endRest.addEventListener('click', rest);
   restBtn.addEventListener('click', () => {
     level = progOf(diffKey).level;
-    startStage();
+    startStage(savedBoard(diffKey, level));
   });
   window.addEventListener('resize', layout);
   window.addEventListener('orientationchange', layout);
@@ -1297,5 +1354,5 @@
 
   loadImages();
   level = progOf(diffKey).level;   // つづきから
-  startStage();
+  startStage(savedBoard(diffKey, level));
 })();
