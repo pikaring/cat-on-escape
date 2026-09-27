@@ -23,7 +23,7 @@
     nao: '#27407a',
     fumi: '#d9731f',
     daiou: '#8e1b1b',
-    chashiro: '#b0793c',
+    momo:     '#8a6a44',
   };
   const TAKO_COLOR = '#c0392b';
   const OTHER_COLOR = '#444c55';

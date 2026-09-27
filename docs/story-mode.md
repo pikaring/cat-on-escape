@@ -36,7 +36,7 @@
 | `fumi` | フミ | 右 | `normal` `happy` `surprised` `serious` |
 | `tako1`〜`tako7` | タコ一郎〜タコ七郎 | 右 | `normal` `down`（やられた） |
 | `daiou` | タコ大王 | 右 | `normal` `angry` `down` |
-| `chashiro` | ちゃしろ（通学路の 猫） | どちらでも | `normal`（ゲームの 猫の 顔 `images/face-chashiro.png`） |
+| `momo` | モモ（通学路の キジトラの 猫） | どちらでも | `normal`（ゲームの 猫の 顔 `images/face-kijitora.png`） |
 
 - **ナオ**：小柄、黒髪ショートボブ、黒ぶちの丸メガネ。まじめで 観察力が ある。ことばは ていねいで 短い。
 - **フミ**：大柄、明るい茶髪の ゆる巻きロング、ギャル。大きめの ベージュのカーディガン。力持ちで 人なつこい。ことばは くだけて 明るい。
@@ -101,7 +101,7 @@ window.STORY = {
     nao:  { name: 'ナオ', side: 'left',  faces: { normal: 'images/story/nao-normal.png', happy: '…', surprised: '…', serious: '…' } },
     fumi: { name: 'フミ', side: 'right', faces: { … } },
     tako1: { name: 'タコ一郎', side: 'right', faces: { normal: 'images/story/tako1-normal.png', down: '…' } },
-    // … tako2〜tako7, daiou, chashiro
+    // … tako2〜tako7, daiou, momo
   },
 
   // 背景。image が 読めない ときは color
@@ -142,7 +142,7 @@ window.STORY = {
 ```
 
 - `cast` の 人に `height`（0〜1、既定 1）を 書くと、その わりあいの 高さに 立つ（絵の 下を 窓の うしろへ しずめる）。
-  背の ちがいは これで 出す（ナオ 0.8・フミ 1・大王 1）。`size`（既定 1）は 絵の 大きさ（タコ一郎〜七郎 0.75、ちゃしろ 0.55）。
+  背の ちがいは これで 出す（ナオ 0.8・フミ 1・大王 1）。`size`（既定 1）は 絵の 大きさ（タコ一郎〜七郎 0.75、モモ 0.55）。
 - `left` / `right` には `cast` の キー。`'nao:happy'` のように `:表情` を つけても よい。
 - `who` が 左右の どちらにも いない ときは、名前だけ 出して 立ち絵は かえない。
 - `text` の 改行は `\n`。1コマ **3行・60文字まで**（スマホで あふれない）。
