@@ -82,6 +82,12 @@
     if (/^tako/.test(key || '')) return TAKO_COLOR;
     return OTHER_COLOR;
   }
+  /** 立ち絵の 立つ 高さ（1 ＝ いちばん 高い）と 大きさ。背の ちがいを 出す */
+  function castFit(key) {
+    const c = castOf(key) || {};
+    const num = (v, d) => (typeof v === 'number' && v > 0 && v <= 1.5 ? v : d);
+    return { height: num(c.height, 1), size: num(c.size, 1) };
+  }
   function faceUrl(key, face) {
     const c = castOf(key);
     if (!c || !c.faces) return '';
@@ -300,6 +306,9 @@
       }
       if (!p) return;
       const node = el('div', `story-fig story-fig--${side}`);
+      const fit = castFit(p.key);
+      node.style.setProperty('--drop', String(Math.max(0, 1 - fit.height)));
+      node.style.setProperty('--size', String(fit.size));
       const inner = el('div', 'story-fig__inner');
       node.appendChild(inner);
       const face = faceOf[p.key] || 'normal';

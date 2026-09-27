@@ -164,17 +164,21 @@
   pointer-events: none;
 }
 
-/* 上半身の 正方形。セリフ窓の 上ふちに 下を そろえる（すこし 窓の うしろに もぐらせる） */
+/* 上半身の 正方形。セリフ窓の 上ふちに 下を そろえる（すこし 窓の うしろに もぐらせる）。
+   左右の 絵は まんなかで すこし 重なる（話している 人が 手前）。 */
 .story-fig {
-  --fig: min(43cqw, 44cqh);
+  --fig: min(60cqw, 46cqh);
+  --drop: 0;   /* 背の 低い 人ほど 大きい：絵を この わりあい だけ 窓の うしろへ しずめる（cast の height） */
+  --size: 1;   /* 絵の 大きさ（cast の size） */
   position: absolute;
   bottom: calc(50% - 10px);
   width: var(--fig);
   height: var(--fig);
 }
 
-.story-fig--left  { left: 3cqw; }
-.story-fig--right { right: 3cqw; }
+.story-fig--left  { left: -5cqw; }
+.story-fig--right { right: -5cqw; }
+.story-fig.is-speaking { z-index: 1; }
 
 .story-fig__inner {
   width: 100%;
@@ -199,6 +203,8 @@
   height: 100%;
   object-fit: contain;
   object-position: 50% 100%;
+  transform-origin: 50% 100%;
+  transform: translateY(calc(var(--drop) * 100%)) scale(var(--size));
   filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .35));
   -webkit-user-drag: none;
 }
