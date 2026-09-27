@@ -978,7 +978,15 @@
     endModal.hidden = true;
     kindModal.hidden = true;
     restEl.hidden = true;
-    window.StoryPlayer.showTitle({ storyNote: storyNote(), onStory: enterStory, onChallenge: enterChallenge });
+    const p = storyProg();
+    const started = p.seenPrologue && p.level <= STORY_LAST;   // とちゅうまで すすんで いる
+    window.StoryPlayer.showTitle({
+      storyNote: started ? 'オープニングから' : storyNote(),
+      continueNote: faceOf(p.level) + '面 レベル' + innerOf(p.level),
+      onContinue: started ? enterStory : undefined,
+      onStory: started || p.level > STORY_LAST ? restartStory : enterStory,
+      onChallenge: enterChallenge,
+    });
   }
 
   /** 下の ボタンを モードに あわせる */
@@ -995,6 +1003,15 @@
     applyMode();
     level = progOf(diffKey).level;   // つづきから
     startStage(savedBoard(diffKey, level));
+  }
+
+  /** 「はじめから」：オープニングから もういちど。すすんだ ところ（つづき）と ★は けさない */
+  function restartStory() {
+    mode = 'story';
+    applyMode();
+    busy = true;
+    level = 1;
+    playScene('prologue', () => beginStoryLevel(null));
   }
 
   function enterStory() {

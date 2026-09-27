@@ -135,7 +135,13 @@
 .story-btn__icon { font-size: 1em; line-height: 1; }
 .story-btn__sub  { font-size: .52em; opacity: .95; }
 
+.story-btn--continue  { background: #2f6fb0; }
 .story-btn--story     { background: var(--c-again, #c65a00); }
+
+/* ボタンが 3つ の ときは すこし 小さな 文字で 1れつに */
+.story-title__btns.is-three { gap: 8px; max-width: 640px; }
+.story-title__btns.is-three .story-btn { font-size: calc(var(--fs-button, 24px) * .8); padding: 8px 4px; }
+.story-title__btns.is-three .story-btn__text { white-space: nowrap; }
 .story-btn--challenge { background: var(--c-kind, #1f7a3d); }
 
 /* =========================================================

@@ -187,8 +187,16 @@
       btns.appendChild(b);
       return b;
     };
-    const btnStory = mk('story-btn--story', '📖', 'ストーリー', o.storyNote || 'はじめから', o.onStory);
-    mk('story-btn--challenge', '🐾', 'チャレンジ', 'むずかしさを えらんで どこまでも', o.onChallenge);
+    // つづきが あれば「つづきから」「はじめから」を ならべる（onContinue が ある とき）
+    let btnStory;
+    if (typeof o.onContinue === 'function') {
+      btnStory = mk('story-btn--continue', '🔖', 'つづきから', o.continueNote || '', o.onContinue);
+      mk('story-btn--story', '📖', 'はじめから', o.storyNote || 'オープニングから', o.onStory);
+      btns.classList.add('is-three');
+    } else {
+      btnStory = mk('story-btn--story', '📖', 'ストーリー', o.storyNote || 'はじめから', o.onStory);
+    }
+    mk('story-btn--challenge', '🐾', 'チャレンジ', btns.classList.contains('is-three') ? 'どこまでも' : 'むずかしさを えらんで どこまでも', o.onChallenge);
     root.appendChild(btns);
 
     current = self;
