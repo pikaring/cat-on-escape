@@ -567,10 +567,15 @@
     }
 
     keepCells.forEach((k) => escaping.delete(k));
+    const hurt = hurtBy(escaping);
+    hurt.forEach((k) => escaping.delete(k));
+    return { escaping, used, hurt };
+  }
 
-    // じゃまものは にげない。にげる マスの となりに いると よわる。
+  /** じゃまものは にげない。にげる マスの 上や となりに いると よわる。よわる じゃまものの マスを かえす */
+  function hurtBy(cells) {
     const hurt = new Set();
-    escaping.forEach((k) => {
+    cells.forEach((k) => {
       const r = rowOf(k), c = colOf(k);
       [[r, c], [r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].forEach(([nr, nc]) => {
         if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) return;
@@ -578,9 +583,7 @@
         if (tile && tile.blocker) hurt.add(key(nr, nc));
       });
     });
-    hurt.forEach((k) => escaping.delete(k));
-
-    return { escaping, used, hurt };
+    return hurt;
   }
 
   /** 1てでも そろえられる いれかえが のこっているか */
@@ -874,6 +877,31 @@
 
   function stageClear() {
     busy = true;
+    // ストーリーの 面の さいごの レベルでは、のこった どうぐを ぜんぶ はじけさせて とくてんに する
+    // （つぎの 面は あたらしい ばんに なるので、どうぐを のこしても むだに なる）
+    if (mode === 'story' && innerOf(level) === PER_FACE && anyItem()) {
+      const before = score;
+      finaleBlast().then(() => showClear(score - before));
+      return;
+    }
+    showClear(0);
+  }
+
+  /** のこった どうぐを ぜんぶ はじけさせる（ばんは つめない。この あと 面が かわる ため） */
+  async function finaleBlast() {
+    await sleep(ESCAPE_HOLD);
+    say('のこった どうぐが ぜんぶ はじけるニャ！');
+    bignews('どうぐ ボーナス！');
+    for (let guard = 0; guard < 10 && anyItem(); guard++) {
+      const items = [];
+      eachTile((tile) => { if (tile.item) items.push(key(tile.r, tile.c)); });
+      const { escaping, used, hurt } = spreadEscape(items, new Set());
+      await runEscape(escaping, used, [], 1, hurt);
+      await sleep(ESCAPE_HOLD + BLAST_MS);
+    }
+  }
+
+  function showClear(itemBonus) {
     const total = movesFor(level);
     const stars = starsFor(movesLeft, total);
     const bonus = movesLeft * MOVE_BONUS;
@@ -899,6 +927,7 @@
     endStars.hidden = false;
     endText.textContent = (info ? info.name + 'の ねこを たすけた！\n' : '') +
       rescued + 'ひき にがした！\n' +
+      (itemBonus ? 'のこった どうぐ ボーナス +' + itemBonus + '\n' : '') +
       'のこり ' + movesLeft + 'て ボーナス +' + bonus + '\n' +
       'とくてん ' + score + '　／　ほし ぜんぶで ★' + curStars();
     endNextTxt.textContent = mode === 'story' ? 'つぎへ' : 'つぎの レベルへ';
@@ -1385,9 +1414,22 @@
       });
 
       const keepCells = new Set(newItems.map((item) => item.at));
-      const { escaping, used, hurt } = spreadEscape([...matched], keepCells);
 
-      await runEscape(escaping, used, newItems, chain, hurt);
+      // ① そろった ねこが にげて、4ひき いじょう なら どうぐが できる（どうぐは まだ はたらかない）
+      const catsOut = new Set([...matched].filter((k) => !keepCells.has(k)));
+      await runEscape(new Set(catsOut), [], newItems, chain, hurtBy(catsOut));
+
+      // ② にげた ねこの となりに あった どうぐが はたらく（いま できた どうぐは はたらかない）
+      const fire = spreadEscape([...catsOut], keepCells);
+      if (fire.used.length) {
+        await sleep(ESCAPE_HOLD);
+        const blastCells = new Set([...fire.escaping].filter((k) => !catsOut.has(k)));
+        const hurt = hurtBy(blastCells);
+        hurt.forEach((k) => blastCells.delete(k));
+        await runEscape(blastCells, fire.used, [], chain, hurt);
+      }
+
+      // ③ あいた ところに ねこが おちて くる（そろえば つぎの れんさ）
       await sleep(ESCAPE_HOLD);
       collapseAndRefill();
       await sleep(FALL_MS + 60);
