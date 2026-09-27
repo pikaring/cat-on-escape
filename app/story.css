@@ -121,6 +121,9 @@
    ストーリー画面
    ========================================================= */
 .story-play {
+  /* セリフ窓の 高さ：3行ぶん（文字 × 行の 高さ 1.7 × 3行 ＋ 上下の よはく・わく） */
+  --win-h: calc(var(--fs-message, 24px) * 1.7 * 3 + 82px);
+  --win-bottom: 12px;
   position: fixed;
   inset: 0;
   z-index: 210;
@@ -174,11 +177,11 @@
 /* 上半身の 正方形。セリフ窓の 上ふちに 下を そろえる（すこし 窓の うしろに もぐらせる）。
    左右の 絵は まんなかで すこし 重なる（話している 人が 手前）。 */
 .story-fig {
-  --fig: min(60cqw, 46cqh);
+  --fig: min(62cqw, 52cqh);
   --drop: 0;   /* 背の 低い 人ほど 大きい：絵を この わりあい だけ 窓の うしろへ しずめる（cast の height） */
   --size: 1;   /* 絵の 大きさ（cast の size） */
   position: absolute;
-  bottom: calc(50% - 10px);
+  bottom: calc(var(--win-bottom) + var(--win-h) - 10px);
   width: var(--fig);
   height: var(--fig);
 }
@@ -256,14 +259,14 @@
 .story-play.is-picture .story-window,
 .story-play.is-picture .story-figs { opacity: 0; pointer-events: none; transition: opacity .35s ease; }
 
-/* ---------- セリフ窓（下半分） ---------- */
+/* ---------- セリフ窓（下に 3行ぶん） ---------- */
 .story-window {
   position: absolute;
   z-index: 2;
   left: 10px;
   right: 10px;
-  top: 50%;
-  bottom: 12px;
+  bottom: var(--win-bottom);
+  height: var(--win-h);
   padding: 30px 20px 40px;
   background: var(--c-bg, #fff8ec);
   color: var(--c-text, #1b1b1b);
@@ -409,10 +412,10 @@
   .story-btn { min-height: 72px; border-width: 4px; border-radius: 18px; }
   .story-btn__icon { display: none; }
 
+  .story-play { --win-h: calc(var(--fs-message, 16px) * 1.5 * 3 + 52px); --win-bottom: 8px; }
   .story-window {
     left: 8px;
     right: 8px;
-    bottom: 8px;
     padding: 20px 14px 24px;
     border-width: 4px;
     border-radius: 18px;

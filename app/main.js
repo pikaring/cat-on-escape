@@ -1032,7 +1032,7 @@
     const quota = levelQuota(level);
     gaugeEl.style.width = Math.min(100, Math.round(rescued / quota * 100)) + '%';
     quotaEl.textContent = rescued >= quota
-      ? 'めあて たっせい！'
+      ? 'もくひょう たっせい！'
       : 'あと ' + (quota - rescued) + 'ひき にがすと クリア';
     movesEl.textContent = 'のこり ' + movesLeft + 'て';
     movesEl.classList.toggle('is-low', movesLeft <= 3);
