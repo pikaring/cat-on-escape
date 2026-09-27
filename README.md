@@ -27,6 +27,7 @@
 | `app/images/tool-*.png` | どうぐの画像4種（ねこじゃらし よこ／たて・けいとだま・すず） |
 | `app/images/foe-*.png` | じゃまものの画像2種（いぬ・おおかみ） |
 | `tools/make_face.py` | 生成AIが出した顔の画像を、背景除去＋グリッドの切り分け＋正方形＋512pxに整える |
+| `tools/make_sprite.py` | ストーリーの立ち絵（上半身）を、グリッドから切り分けて背景を抜き、512pxにそろえる |
 | `tools/make_icons.py` | 猫の顔からアプリのアイコン一式をつくる |
 | `tools/fetch_goods.py` | 紹介ページの本・グッズの画像と価格を Amazon Creators API で取り直す（ほかのサイトと同じもの） |
 | `.github/workflows/goods.yml` | 上を毎日3時（JST）に実行して `assets/goods.json` を更新する |

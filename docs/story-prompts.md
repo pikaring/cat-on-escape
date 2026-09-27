@@ -30,8 +30,8 @@
 
 | 順 | 作るもの | できるファイル | 1枚の形 |
 | --- | --- | --- | --- |
-| 1 | ナオの立ち絵（表情4つ） | `nao-normal` `nao-happy` `nao-surprised` `nao-serious` | 2×2グリッド → 512×512×4 |
-| 2 | フミの立ち絵（表情4つ） | `fumi-normal` `fumi-happy` `fumi-surprised` `fumi-serious` | 2×2グリッド → 512×512×4 |
+| 1 | ナオの立ち絵（表情4つ）✅ | `nao-normal` `nao-happy` `nao-surprised` `nao-serious` | 2×2グリッド → 512×512×4 |
+| 2 | フミの立ち絵（表情4つ）✅ | `fumi-normal` `fumi-happy` `fumi-surprised` `fumi-serious` | 2×2グリッド → 512×512×4 |
 | 3 | タコ大王の立ち絵（表情3つ） | `daiou-normal` `daiou-angry` `daiou-down` | 横1列 → 512×512×3 |
 | 4 | タコ一郎〜七郎（ふつう） | `tako1-normal` 〜 `tako7-normal` | 4×2グリッド → 512×512×7 |
 | 5 | タコ一郎〜七郎（やられた） | `tako1-down` 〜 `tako7-down` | 4×2グリッド → 512×512×7 |
@@ -307,19 +307,26 @@
 
 ## できた絵を ゲームに入れる
 
-立ち絵（1〜5）は、猫の顔と同じ `tools/make_face.py` で、背景を抜いて1枚ずつに切り分けます。
-名前は **左上から右へ** の順です。
+立ち絵（1〜5）は `tools/make_sprite.py` で、マスごとに切り分けて背景の白を抜きます。
+名前は **左上から右へ** の順、`列数x行数` はグリッドの形です。
 
 ```
 pip install pillow numpy     # 最初の1回だけ
 mkdir -p app/images/story
 
-python3 tools/make_face.py app/images/story nao.png:nao-normal,nao-happy,nao-surprised,nao-serious
-python3 tools/make_face.py app/images/story fumi.png:fumi-normal,fumi-happy,fumi-surprised,fumi-serious
-python3 tools/make_face.py app/images/story daiou.png:daiou-normal,daiou-angry,daiou-down
-python3 tools/make_face.py app/images/story takos.png:tako1-normal,tako2-normal,tako3-normal,tako4-normal,tako5-normal,tako6-normal,tako7-normal
-python3 tools/make_face.py app/images/story takos-down.png:tako1-down,tako2-down,tako3-down,tako4-down,tako5-down,tako6-down,tako7-down
+python3 tools/make_sprite.py app/images/story nao.png:2x2:nao-normal,nao-happy,nao-surprised,nao-serious
+python3 tools/make_sprite.py app/images/story fumi.png:2x2:fumi-normal,fumi-happy,fumi-surprised,fumi-serious
+python3 tools/make_sprite.py app/images/story daiou.png:3x1:daiou-normal,daiou-angry,daiou-down
+python3 tools/make_sprite.py app/images/story takos.png:4x2:tako1-normal,tako2-normal,tako3-normal,tako4-normal,tako5-normal,tako6-normal,tako7-normal
+python3 tools/make_sprite.py app/images/story takos-down.png:4x2:tako1-down,tako2-down,tako3-down,tako4-down,tako5-down,tako6-down,tako7-down
 ```
+
+- 顔アイコン用の `make_face.py` は使いません。体が絵の下で切れているので、
+  下のふちから背景をたどると、ブレザーやカーディガンまで抜けてしまうためです。
+  `make_sprite.py` は **上と左右のふちからだけ** 白をたどって抜き、体の下はしを正方形の下にそろえます。
+- マスの**区切り線が描かれていても大丈夫**です（線を見つけて、そこで切ります）。
+- 髪のすきまなど、まわりを囲まれた白は残ります。気になるときは、その白を背景と同じ白でなく
+  髪の色で塗るよう、プロンプトで頼み直してください。
 
 背景・タイトル・エンディング（6〜8）は切り分けずに、そのまま
 `app/images/story/bg-road.png`・`title.png`・`ending.png` などの名前で置きます。
