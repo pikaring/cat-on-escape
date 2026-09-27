@@ -267,7 +267,7 @@
 
       // ───── エンディング ─────
       ending: [
-        { bg: 'ending', left: null, right: null, text: 'それから しばらく たった\nある日の あさ。' },
+        { bg: 'road', left: null, right: null, text: 'それから しばらく たった\nある日の あさ。' },
         { text: '街には 猫たちが もどり、\n塀の 上や 軒下で\nのんびり あくびを している。' },
         { left: 'nao', right: 'fumi', who: 'fumi', face: 'happy', text: 'ナオ、おっはー！\nきのうの 商店街の\nニュース 見た？' },
         { who: 'nao', face: 'happy', text: 'はい。「商店街の マスコット、\nタコちゃん」。\n大人気 だそうです。' },
@@ -284,6 +284,7 @@
         { right: 'fumi', who: 'fumi', face: 'happy', text: 'やっぱ 朝は ちゃしろに\nあいさつ しないと\nはじまらない よね！' },
         { who: 'nao', face: 'happy', text: 'はい。\nいってきます、ちゃしろ。' },
         { left: null, right: null, text: 'こうして 街に\nいつもの あさが もどった。\n―― おしまい ――' },
+        { bg: 'ending', picture: true },
       ],
     },
   };

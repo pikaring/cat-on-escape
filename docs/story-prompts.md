@@ -35,9 +35,9 @@
 | 3 | タコ大王の立ち絵（表情3つ）✅ | `daiou-normal` `daiou-angry` `daiou-down` | 横1列 → 512×512×3 |
 | 4 | タコ一郎〜七郎（ふつう）✅ | `tako1-normal` 〜 `tako7-normal` | 4×2グリッド → 512×512×7 |
 | 5 | タコ一郎〜七郎（やられた）✅ | `tako1-down` 〜 `tako7-down` | 4×2グリッド → 512×512×7 |
-| 6 | 背景9枚（路地裏 以外 ✅） | `bg-lair` `bg-road` `bg-shotengai` `bg-roji` `bg-park` `bg-river` `bg-factory` `bg-tunnel` `bg-base` | 1024×1536（たて） |
-| 7 | タイトル | `title` | 1024×1536（たて） |
-| 8 | エンディング | `ending` | 1024×1536（たて） |
+| 6 | 背景9枚 ✅ | `bg-lair` `bg-road` `bg-shotengai` `bg-roji` `bg-park` `bg-river` `bg-factory` `bg-tunnel` `bg-base` | 1024×1536（たて） |
+| 7 | タイトル ✅ | `title` | 1024×1536（たて） |
+| 8 | エンディング ✅ | `ending` | 1024×1536（たて） |
 
 **1（ナオ）を最初に作り、以後はすべて、その絵を参照画像として添付します。**
 線の太さ・塗り・顔の描き方が、最初の1枚にそろいます。

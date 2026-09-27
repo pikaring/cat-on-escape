@@ -354,12 +354,19 @@
     // --- コマ ---
     function apply(step) {
       if (!step || typeof step !== 'object') return false;
+      root.classList.remove('is-picture');
       if (step.bg && step.bg !== bgKey) setBg(step.bg);
       if ('left' in step) setSlot('left', step.left);
       if ('right' in step) setSlot('right', step.right);
       if (step.who && step.face) faceOf[step.who] = step.face;
       refreshFig('left');
       refreshFig('right');
+      if (step.picture) {                          // 絵だけを 見せる コマ（セリフ窓と 立ち絵を かくし、タップを まつ）
+        stopTyping();
+        root.classList.add('is-picture');
+        live.textContent = '';
+        return true;
+      }
       const hasText = step.text != null && step.text !== '';
       if (!hasText) return false;
       who = step.who || null;

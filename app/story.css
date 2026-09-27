@@ -10,6 +10,7 @@
   position: fixed;
   inset: 0;
   z-index: 200;
+  background: #173a22;           /* 横長の 画面で 絵の 左右に 見える 色 */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -25,7 +26,11 @@
 
 .story-title__bg {
   position: absolute;
-  inset: 0;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: min(100%, 66.7dvh);   /* 絵は たて長（2:3）。横長の 画面では まんなかに たて長の まま 出す */
+  transform: translateX(-50%);
   z-index: -1;
   background-size: cover;
   background-position: center;
@@ -72,11 +77,13 @@
 
 .story-title__btns {
   width: 100%;
-  max-width: 520px;
+  max-width: 560px;
   display: flex;
-  flex-direction: column;
-  gap: 18px;
+  flex-direction: row;          /* よこに ならべて 下に よせる（絵の ふたりを かくさない） */
+  gap: 12px;
 }
+
+.story-title__btns .story-btn { flex: 1 1 0; min-height: 88px; }
 
 /* ゲームの .btn と おなじ 形・押し心地 */
 .story-btn {
@@ -244,6 +251,10 @@
 .story-fig--right.is-entering { animation: story-in-right .32s ease-out both; }
 .story-fig--left.is-leaving   { animation: story-out-left  .32s ease-in both; }
 .story-fig--right.is-leaving  { animation: story-out-right .32s ease-in both; }
+
+/* 絵だけを 見せる コマ（step の picture: true） */
+.story-play.is-picture .story-window,
+.story-play.is-picture .story-figs { opacity: 0; pointer-events: none; transition: opacity .35s ease; }
 
 /* ---------- セリフ窓（下半分） ---------- */
 .story-window {
