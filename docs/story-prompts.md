@@ -32,9 +32,9 @@
 | --- | --- | --- | --- |
 | 1 | ナオの立ち絵（表情4つ）✅ | `nao-normal` `nao-happy` `nao-surprised` `nao-serious` | 2×2グリッド → 512×512×4 |
 | 2 | フミの立ち絵（表情4つ）✅ | `fumi-normal` `fumi-happy` `fumi-surprised` `fumi-serious` | 2×2グリッド → 512×512×4 |
-| 3 | タコ大王の立ち絵（表情3つ） | `daiou-normal` `daiou-angry` `daiou-down` | 横1列 → 512×512×3 |
-| 4 | タコ一郎〜七郎（ふつう） | `tako1-normal` 〜 `tako7-normal` | 4×2グリッド → 512×512×7 |
-| 5 | タコ一郎〜七郎（やられた） | `tako1-down` 〜 `tako7-down` | 4×2グリッド → 512×512×7 |
+| 3 | タコ大王の立ち絵（表情3つ）✅ | `daiou-normal` `daiou-angry` `daiou-down` | 横1列 → 512×512×3 |
+| 4 | タコ一郎〜七郎（ふつう）✅ | `tako1-normal` 〜 `tako7-normal` | 4×2グリッド → 512×512×7 |
+| 5 | タコ一郎〜七郎（やられた）✅ | `tako1-down` 〜 `tako7-down` | 4×2グリッド → 512×512×7 |
 | 6 | 背景9枚 | `bg-lair` `bg-road` `bg-shotengai` `bg-roji` `bg-park` `bg-river` `bg-factory` `bg-tunnel` `bg-base` | 1024×1536（たて） |
 | 7 | タイトル | `title` | 1024×1536（たて） |
 | 8 | エンディング | `ending` | 1024×1536（たて） |
@@ -325,6 +325,8 @@ python3 tools/make_sprite.py app/images/story takos-down.png:4x2:tako1-down,tako
   下のふちから背景をたどると、ブレザーやカーディガンまで抜けてしまうためです。
   `make_sprite.py` は **上と左右のふちからだけ** 白をたどって抜き、体の下はしを正方形の下にそろえます。
 - マスの**区切り線が描かれていても大丈夫**です（線を見つけて、そこで切ります）。
+- 区切り線が**無くても大丈夫**です。キャラのかたまりを見つけて切り分け、釣り竿の魚や湯気のように
+  となりのマスへはみ出した小物も、いちばん近いキャラに付けます。全身の絵なら、足の下の余白も切りつめます。
 - 髪のすきまなど、まわりを囲まれた白は残ります。気になるときは、その白を背景と同じ白でなく
   髪の色で塗るよう、プロンプトで頼み直してください。
 

@@ -7,6 +7,8 @@ make_face.py（顔アイコン用）との ちがい:
   （下の ふちから たどると、ブレザーや カーディガンまで 背景と まちがえて 抜けてしまう）
 ・体の 下はしは 正方形の 下に そろえたまま、左右の まんなかに 置く（セリフ窓の 上に 立たせるため）
 ・グリッドに 区切り線が 描かれていても よい。線を 見つけて、マスごとに 切り分ける
+・区切り線が ない ときは、絵の かたまり（キャラ）を 見つけて 切り分ける。
+  釣り竿の 魚や 湯気のように、となりの マスに はみ出した 小物も、いちばん 近い キャラに つける
 
 つかいかた:
     python3 tools/make_sprite.py 出力先ディレクトリ 入力:列数x行数:出力名[,出力名...] ...
@@ -29,8 +31,97 @@ LINE = 90         # これより 暗い 画素が 列（行）の 8割を こえ
 TOP_MARGIN = 0.03 # 頭の上に あける 余白（1枚の 高さに 対する 割合）
 
 
+def has_lines(img, cols, rows):
+    """グリッドの 区切り線が 描かれているか"""
+    a = np.asarray(img).astype(int)
+    h, w, _ = a.shape
+    dark = a.max(axis=2) < LINE
+    col, row = dark.mean(axis=0), dark.mean(axis=1)
+    near = lambda prof, n, parts: any(
+        prof[max(0, n * k // parts - n // 20):n * k // parts + n // 20].max() > 0.8 for k in range(1, parts))
+    return (cols > 1 and near(col, w, cols)) or (rows > 1 and near(row, h, rows))
+
+
+def label(mask):
+    """つながった かたまりに 番号を つける（上下左右）。0 は なし。"""
+    h, w = mask.shape
+    lab = np.zeros((h, w), np.int32)
+    n = 0
+    for y0, x0 in zip(*np.nonzero(mask)):
+        if lab[y0, x0]:
+            continue
+        n += 1
+        lab[y0, x0] = n
+        queue = deque([(y0, x0)])
+        while queue:
+            y, x = queue.popleft()
+            for ny, nx in ((y - 1, x), (y + 1, x), (y, x - 1), (y, x + 1)):
+                if 0 <= ny < h and 0 <= nx < w and mask[ny, nx] and not lab[ny, nx]:
+                    lab[ny, nx] = n
+                    queue.append((ny, nx))
+    return lab, n
+
+
+def split_figures(img, cols, count):
+    """区切り線が ない グリッドを、キャラごとに 切り分ける。
+    大きい かたまり count個を キャラと し、のこりの 小物は いちばん 近い キャラに つける。
+    かえす ものは、キャラごとの 切りぬき（RGBA）の ならび（左上から 右へ）。"""
+    rgb = np.asarray(img.convert('RGB')).astype(int)
+    h, w, _ = rgb.shape
+    S = 4                                     # かたまりを さがす ときは 1/4 に ちぢめる（はやさの ため）
+    fg = rgb.min(axis=2) < WHITE
+    sh, sw = (h + S - 1) // S, (w + S - 1) // S
+    small = np.zeros((sh, sw), bool)
+    for dy in range(S):
+        for dx in range(S):
+            part = fg[dy::S, dx::S]
+            small[:part.shape[0], :part.shape[1]] |= part
+    lab, n = label(small)
+    if n < count:
+        raise SystemExit('キャラが %d こ しか 見つかりません（%d こ ほしい）' % (n, count))
+
+    sizes = np.bincount(lab.ravel())[1:]
+    anchors = list(np.argsort(sizes)[::-1][:count] + 1)
+    boxes = {}
+    for i in range(1, n + 1):
+        ys, xs = np.nonzero(lab == i)
+        boxes[i] = (ys.min(), xs.min(), ys.max(), xs.max(), ys.mean(), xs.mean())
+
+    def gap(a, b):
+        ay0, ax0, ay1, ax1 = boxes[a][:4]
+        by0, bx0, by1, bx1 = boxes[b][:4]
+        return max(0, max(ay0, by0) - min(ay1, by1)) ** 2 + max(0, max(ax0, bx0) - min(ax1, bx1)) ** 2
+
+    owner = np.zeros(n + 1, np.int32)         # かたまり → キャラ（anchors の なかの 番号＋1）
+    for k, a in enumerate(anchors):
+        owner[a] = k + 1
+    for i in range(1, n + 1):
+        if not owner[i]:
+            owner[i] = min(range(count), key=lambda k: gap(i, anchors[k])) + 1
+
+    # ならびを きめる：上から cols こずつ、行の なかは 左から
+    by_y = sorted(range(count), key=lambda k: boxes[anchors[k]][4])
+    order = []
+    for r in range(0, count, cols):
+        order += sorted(by_y[r:r + cols], key=lambda k: boxes[anchors[k]][5])
+
+    who = owner[lab]                          # ちぢめた 画面の 各マスが どの キャラか（0 は 背景）
+    who_full = np.repeat(np.repeat(who, S, axis=0), S, axis=1)[:h, :w]
+    figures = []
+    for k in order:
+        ys, xs = np.nonzero(who == k + 1)
+        y0, y1 = max(0, ys.min() * S - S), min(h, (ys.max() + 1) * S + S)
+        x0, x1 = max(0, xs.min() * S - S), min(w, (xs.max() + 1) * S + S)
+        crop = cut_out(img.crop((x0, y0, x1, y1)))
+        a = np.asarray(crop).copy()
+        mine = who_full[y0:y1, x0:x1]
+        a[:, :, 3][(mine != 0) & (mine != k + 1)] = 0     # となりの キャラの ものは 消す
+        figures.append(Image.fromarray(a, 'RGBA'))
+    return figures
+
+
 def split_cells(img, cols, rows):
-    """区切り線が あれば それに そって、なければ 等分で マスに 切る。"""
+    """区切り線に そって マスに 切る（線が 見つからない ところは 等分）。"""
     a = np.asarray(img).astype(int)
     h, w, _ = a.shape
     dark = a.max(axis=2) < LINE
@@ -93,7 +184,7 @@ def to_square(sprite):
     """中身を 切りつめ、下はしを そろえて 正方形の 下・まんなかに 置く。"""
     a = np.asarray(sprite)[:, :, 3]
     ys, xs = np.where(a > 0)
-    box = (xs.min(), ys.min(), xs.max() + 1, sprite.height)   # 下は 切らない（体の 切れ目）
+    box = (xs.min(), ys.min(), xs.max() + 1, ys.max() + 1)   # 体が 下で 切れて いれば、そのまま 下はし
     body = sprite.crop(box)
     side = max(body.width, int(body.height * (1 + TOP_MARGIN)))
     canvas = Image.new('RGBA', (side, side), (0, 0, 0, 0))
@@ -112,12 +203,14 @@ def main(argv):
         cols, rows = (int(n) for n in grid.lower().split('x'))
         names = names.split(',')
         img = Image.open(path).convert('RGB')
-        cells = split_cells(img, cols, rows)
-        for name, cell in zip(names, cells):
-            if not name:
-                continue
+        wanted = [n for n in names if n]
+        if has_lines(img, cols, rows):
+            sprites = [cut_out(cell) for cell, name in zip(split_cells(img, cols, rows), names) if name]
+        else:
+            sprites = split_figures(img, cols, len(wanted))
+        for name, sprite in zip(wanted, sprites):
             dest = os.path.join(out_dir, name + '.png')
-            to_square(cut_out(cell)).save(dest, optimize=True)
+            to_square(sprite).save(dest, optimize=True)
             print('○', path, '→', dest)
     return 0
 
