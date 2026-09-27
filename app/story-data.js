@@ -13,6 +13,7 @@
 
   window.STORY = {
     title: '猫が消えた街',
+    logo: 'images/story/logo.png',   // タイトルの ロゴ（読めなければ title と subtitle の 文字）
     subtitle: '〜cat on escape〜',
 
     cast: {

@@ -95,6 +95,7 @@
 window.STORY = {
   title: '猫が消えた街',
   subtitle: '〜cat on escape〜',
+  logo: 'images/story/logo.png',   // タイトルの ロゴ画像（読めなければ title と subtitle の 文字で 出す）
 
   // 登場人物。side は 立つ側（'left' | 'right'）。faces は 表情 → 画像の パス
   cast: {

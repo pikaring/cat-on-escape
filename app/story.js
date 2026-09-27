@@ -151,8 +151,22 @@
     const h1 = el('h1', 'story-title__name', (s && s.title) || DEFAULT_TITLE);
     h1.id = 'storyTitleName';
     head.appendChild(h1);
-    head.appendChild(el('p', 'story-title__sub', (s && s.subtitle) || DEFAULT_SUBTITLE));
+    const sub = el('p', 'story-title__sub', (s && s.subtitle) || DEFAULT_SUBTITLE);
+    head.appendChild(sub);
     root.appendChild(head);
+
+    // ロゴの 画像（STORY.logo）が 読めたら、文字の かわりに 出す（読みあげは 文字の まま）
+    if (s && s.logo) {
+      loadImage(s.logo, (ok) => {
+        if (!ok || !head.isConnected) return;
+        const img = el('img', 'story-title__logo');
+        img.src = s.logo;
+        img.alt = '';
+        img.setAttribute('aria-hidden', 'true');
+        head.insertBefore(img, h1);
+        head.classList.add('has-logo');
+      });
+    }
 
     const btns = el('div', 'story-title__btns');
     const self = {

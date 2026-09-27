@@ -49,6 +49,27 @@
   max-width: 100%;
 }
 
+/* ロゴの 画像（読めた ときだけ）。文字の タイトルは 読みあげ用に のこして 見えなく する */
+.story-title__logo {
+  display: block;
+  width: min(92vw, 560px, 62dvh);
+  height: auto;
+  margin: 0 auto;
+  filter: drop-shadow(0 4px 0 rgba(0, 0, 0, .18));
+  -webkit-user-drag: none;
+  animation: story-fade .35s ease both;
+}
+
+.story-title__head.has-logo .story-title__name,
+.story-title__head.has-logo .story-title__sub {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 /* 大きな タイトル：白い 文字＋こい みどりの ふち */
 .story-title__name {
   margin: 0;
