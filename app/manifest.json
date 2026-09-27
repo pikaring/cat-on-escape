@@ -1,7 +1,7 @@
 {
-  "name": "ねこを にがせ",
-  "short_name": "ねこにがせ",
-  "description": "ねこの かおを すべらせて 3びき そろえ、ねこを にがす おちもの パズル",
+  "name": "猫が消えた街 〜cat on escape〜",
+  "short_name": "猫が消えた街",
+  "description": "タコに かくされた 街の ねこを たすけだす、ねこを そろえて にがす おちもの パズル",
   "lang": "ja",
   "start_url": "./",
   "scope": "./",
