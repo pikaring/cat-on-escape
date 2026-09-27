@@ -30,17 +30,17 @@
     },
 
     backgrounds: {
-      title:     { image: 'images/story/title.png',        color: '#2f5d3a' },
-      lair:      { image: 'images/story/bg-lair.png',      color: '#1f4d52' },
-      road:      { image: 'images/story/bg-road.png',      color: '#a8d4e6' },
-      shotengai: { image: 'images/story/bg-shotengai.png', color: '#f2c37b' },
-      roji:      { image: 'images/story/bg-roji.png',      color: '#8d8378' },
-      park:      { image: 'images/story/bg-park.png',      color: '#9cc5a1' },
-      river:     { image: 'images/story/bg-river.png',     color: '#e07b2a' },
-      factory:   { image: 'images/story/bg-factory.png',   color: '#6b6259' },
-      tunnel:    { image: 'images/story/bg-tunnel.png',    color: '#2b3440' },
-      base:      { image: 'images/story/bg-base.png',      color: '#1f4d52' },
-      ending:    { image: 'images/story/ending.png',       color: '#ffe36e' },
+      title:     { image: 'images/story/title.jpg',        color: '#2f5d3a' },
+      lair:      { image: 'images/story/bg-lair.jpg',      color: '#1f4d52' },
+      road:      { image: 'images/story/bg-road.jpg',      color: '#a8d4e6' },
+      shotengai: { image: 'images/story/bg-shotengai.jpg', color: '#f2c37b' },
+      roji:      { image: 'images/story/bg-roji.jpg',      color: '#8d8378' },
+      park:      { image: 'images/story/bg-park.jpg',      color: '#9cc5a1' },
+      river:     { image: 'images/story/bg-river.jpg',     color: '#e07b2a' },
+      factory:   { image: 'images/story/bg-factory.jpg',   color: '#6b6259' },
+      tunnel:    { image: 'images/story/bg-tunnel.jpg',    color: '#2b3440' },
+      base:      { image: 'images/story/bg-base.jpg',      color: '#1f4d52' },
+      ending:    { image: 'images/story/ending.jpg',       color: '#ffe36e' },
     },
 
     stages: [

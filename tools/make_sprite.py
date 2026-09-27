@@ -210,7 +210,9 @@ def main(argv):
             sprites = split_figures(img, cols, len(wanted))
         for name, sprite in zip(wanted, sprites):
             dest = os.path.join(out_dir, name + '.png')
-            to_square(sprite).save(dest, optimize=True)
+            # 色数の すくない 絵なので 256色に へらして 軽くする（見た目は ほぼ 変わらず 1/6 ほどに）
+            to_square(sprite).quantize(256, method=Image.Quantize.FASTOCTREE,
+                                       dither=Image.Dither.NONE).save(dest, optimize=True)
             print('○', path, '→', dest)
     return 0
 

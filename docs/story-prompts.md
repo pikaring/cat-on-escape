@@ -35,7 +35,7 @@
 | 3 | タコ大王の立ち絵（表情3つ）✅ | `daiou-normal` `daiou-angry` `daiou-down` | 横1列 → 512×512×3 |
 | 4 | タコ一郎〜七郎（ふつう）✅ | `tako1-normal` 〜 `tako7-normal` | 4×2グリッド → 512×512×7 |
 | 5 | タコ一郎〜七郎（やられた）✅ | `tako1-down` 〜 `tako7-down` | 4×2グリッド → 512×512×7 |
-| 6 | 背景9枚 | `bg-lair` `bg-road` `bg-shotengai` `bg-roji` `bg-park` `bg-river` `bg-factory` `bg-tunnel` `bg-base` | 1024×1536（たて） |
+| 6 | 背景9枚（公園・河川敷・工場跡・トンネル・秘密基地 ✅） | `bg-lair` `bg-road` `bg-shotengai` `bg-roji` `bg-park` `bg-river` `bg-factory` `bg-tunnel` `bg-base` | 1024×1536（たて） |
 | 7 | タイトル | `title` | 1024×1536（たて） |
 | 8 | エンディング | `ending` | 1024×1536（たて） |
 
@@ -330,10 +330,15 @@ python3 tools/make_sprite.py app/images/story takos-down.png:4x2:tako1-down,tako
 - 髪のすきまなど、まわりを囲まれた白は残ります。気になるときは、その白を背景と同じ白でなく
   髪の色で塗るよう、プロンプトで頼み直してください。
 
-背景・タイトル・エンディング（6〜8）は切り分けずに、そのまま
-`app/images/story/bg-road.png`・`title.png`・`ending.png` などの名前で置きます。
-重いときは、横1024px のまま JPEG 品質80くらいに下げてもかまいません（そのときは拡張子とあわせて
-`app/story-data.js` のパスも `.jpg` に直す）。
+背景・タイトル・エンディング（6〜8）は切り分けずに、**横1024px の JPEG（品質80）** にして
+`app/images/story/bg-road.jpg`・`title.jpg`・`ending.jpg` などの名前で置きます（1枚 200〜350KB ほど）。
+
+```
+python3 -c "from PIL import Image; im=Image.open('road.png').convert('RGB'); im.resize((1024, round(im.height*1024/im.width)), Image.LANCZOS).save('app/images/story/bg-road.jpg', quality=80, optimize=True, progressive=True)"
+```
+
+- 背景の**下半分はセリフ窓で隠れます**。絵の下のほうに意味のない文字（看板など）が出てしまっても、たいてい見えません。
+- 画面の縦横比によって、左右が少し切れます。大事なものは まんなか寄りに。
 
 ファイル名は `app/story-data.js` の `cast` と `backgrounds` に書いてあるパスと同じにしてください。
 パスが合っていれば、再読み込みするだけで絵が出ます。
