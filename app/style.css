@@ -17,6 +17,7 @@
   --c-again:       #c65a00;   /* はじめから：オレンジ */
   --c-kind:        #1f7a3d;   /* ねこの かず：みどり */
   --c-close:       #444c55;
+  --c-title:       #2f5d8a;   /* タイトルへ：あお */
   --c-ok:          #1f7a3d;
   --c-accent:      #ffe36e;
 
@@ -467,6 +468,13 @@ body {
 
 .btn--again { background: var(--c-again); }
 .btn--kind  { background: var(--c-kind); }
+.btn--skip  { background: #7a5ea8; }   /* ストーリーを たしかめる ための「とばす」（かり） */
+
+/* ボタンが 3つ ならぶ ときは 文字を ちいさく して 折りかえさない */
+.actions:has(.btn--skip:not([hidden])) .btn { font-size: calc(var(--fs-button) * .78); }
+.actions:has(.btn--skip:not([hidden])) .btn__text { white-space: nowrap; }
+.btn--title { background: var(--c-title); }
+.btn[hidden] { display: none; }
 
 .btn--close {
   background: var(--c-close);
@@ -655,7 +663,7 @@ body {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding-top: 26dvh;
+  padding-top: max(6px, 1.2dvh);   /* 上の みどりの ところに 出す（猫の そろった ところを かくさない） */
   z-index: 50;
   pointer-events: none;
 }
@@ -664,12 +672,12 @@ body {
 
 .bignews__text {
   margin: 0;
-  padding: 14px 26px;
+  padding: 6px 22px;
   text-align: center;
-  font-size: clamp(36px, 10vw, 76px);
+  font-size: clamp(28px, 7.5vw, 52px);
   color: #ffffff;
   background: var(--c-ok);
-  border: 8px solid #ffffff;
+  border: 5px solid #ffffff;
   border-radius: 28px;
   box-shadow: 0 10px 0 rgba(0, 0, 0, .3);
   animation: bignews-in .5s ease both;
@@ -724,8 +732,8 @@ body {
   .end__actions .btn, .rest .btn { min-height: 52px; }
   .end__stars { font-size: 36px; }
 
-  .bignews { padding-top: 18dvh; }
-  .bignews__text { font-size: 34px; border-width: 5px; padding: 8px 18px; }
+  .bignews { padding-top: 4px; }
+  .bignews__text { font-size: 24px; border-width: 4px; padding: 3px 14px; }
 }
 
 /* アニメーションが にがてな ひとの ために */

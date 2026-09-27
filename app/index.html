@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ねこを にがせ</title>
+<title>猫が消えた街 〜cat on escape〜</title>
 <meta name="description" content="ねこの かおを すべらせて 3びき そろえ、ねこを にがす おちもの パズル">
 <meta name="theme-color" content="#2f5d3a">
 
@@ -17,6 +17,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="ねこにがせ">
 
+<link rel="stylesheet" href="story.css">
 <link rel="stylesheet" href="style.css">
 <link rel="canonical" href="https://pikaring.github.io/cat-on-escape/app/">
 </head>
@@ -68,6 +69,15 @@
       <span class="btn__text">むずかしさ</span>
       <span class="btn__sub" id="kindSub">ふつう</span>
     </button>
+    <button type="button" class="btn btn--skip" id="btnSkip" hidden>
+      <span class="btn__icon" aria-hidden="true">⏭</span>
+      <span class="btn__text">とばす</span>
+      <span class="btn__sub">かり</span>
+    </button>
+    <button type="button" class="btn btn--title" id="btnTitle" hidden>
+      <span class="btn__icon" aria-hidden="true">🏠</span>
+      <span class="btn__text">タイトル</span>
+    </button>
   </footer>
 
   <!-- ===== ねこの かずを えらぶ がめん ===== -->
@@ -82,6 +92,10 @@
 
       <button type="button" class="btn btn--again btn--wide" id="btnLevelOne">
         <span class="btn__text">レベル 1 から あそぶ</span>
+      </button>
+
+      <button type="button" class="btn btn--title btn--wide" id="btnToTitle" hidden>
+        <span class="btn__text">タイトルへ</span>
       </button>
 
       <button type="button" class="btn btn--close" id="btnCloseKind">
@@ -119,6 +133,8 @@
     <p class="bignews__text" id="bignewsText"></p>
   </div>
 
+<script src="story-data.js"></script>
+<script src="story.js"></script>
 <script src="main.js"></script>
 </body>
 </html>
