@@ -89,6 +89,31 @@
     hard:   { name: 'むずかしい', note: 'ねこ6しゅるい・じゃまもの さいだい3', types: 6, rate: 5,  max: 3, foeFrom: 2, foeEvery: 2, wolfFrom: 4 },
   };
 
+  /* ---------------- ストーリーモード（全8面・24レベル、1面＝3レベル） ----------------
+   * モードは 2つ。'challenge' は いままでの あそびかた（むずかしさ3段階・レベルは どこまでも）。
+   * 'story' は 面が すすむほど むずかしく なる 24レベル。面の はじめと おわりに ストーリーを はさむ。
+   * ストーリーの 画面は story.js の window.StoryPlayer（なければ とばして すすむ）。 */
+  const STORY_KEY = 'catonescape.story';   // { level, stars: { 1: 3, … }, board, seenPrologue }
+  const PER_FACE = 3;                      // 1面の レベル数
+  const STORY_LAST = 24;                   // さいごの レベル
+  const RATE_BY_TYPES = { 4: 12, 5: 7, 6: 5 };  // ねこの しゅるい数 → 1てで にげる ねこの めやす（DIFFS と おなじ）
+
+  /** 面ごとの むずかしさ。tight は 面の なかの 3レベルの きつさ（めあて ＝ rate × MOVES × tight）、
+   *  foes は はじめに いる じゃまものの かず（その かずが さいだい）、wolf は じゃまものが おおかみに なる わりあい。 */
+  const STORY_PLAN = [
+    { types: 4, tight: [0.40, 0.45, 0.50], foes: [0, 0, 0], wolf: 0 },    // 1面 通学路     めあて 70・80・90
+    { types: 4, tight: [0.55, 0.60, 0.65], foes: [0, 0, 0], wolf: 0 },    // 2面 商店街     100・110・115
+    { types: 5, tight: [0.55, 0.60, 0.65], foes: [1, 1, 1], wolf: 0 },    // 3面 路地裏     60・65・70（いぬ 1）
+    { types: 5, tight: [0.62, 0.66, 0.70], foes: [1, 1, 2], wolf: 0 },    // 4面 公園       65・70・75
+    { types: 5, tight: [0.68, 0.72, 0.76], foes: [2, 2, 2], wolf: 0.3 },  // 5面 河川敷     70・75・80（おおかみも）
+    { types: 6, tight: [0.72, 0.78, 0.85], foes: [2, 2, 2], wolf: 0.4 },  // 6面 工場跡     55・60・65
+    { types: 6, tight: [0.80, 0.85, 0.87], foes: [2, 3, 3], wolf: 0.5 },  // 7面 トンネル   60・65・65
+    { types: 6, tight: [0.87, 0.92, 0.95], foes: [3, 3, 3], wolf: 0.6 },  // 8面 秘密基地   65・70・70
+  ];
+
+  const faceOf = (n) => Math.ceil(n / PER_FACE);        // レベル n の 面
+  const innerOf = (n) => (n - 1) % PER_FACE + 1;        // 面の なかの ばんごう（1〜3）
+
   const boardEl    = document.getElementById('board');
   const areaEl     = document.getElementById('boardArea');
   const runwayEl   = document.getElementById('runway');
@@ -118,6 +143,8 @@
   const restText   = document.getElementById('restText');
   const restBtn    = document.getElementById('btnRestart');
   const levelOneBtn = document.getElementById('btnLevelOne');
+  const titleBtn   = document.getElementById('btnTitle');     // ストーリーの 下の「タイトル」
+  const toTitleBtn = document.getElementById('btnToTitle');   // むずかしさの 画面の「タイトルへ」
 
   /** grid[r][c] = tile | null */
   let grid = [];
@@ -131,6 +158,8 @@
   let rescued = 0;          // いまの レベルで にがした ねこの かず
   let movesLeft = MOVES;    // いまの レベルで のこっている て
   let progress = {};        // むずかしさごとの すすみ（PROG_KEY）
+  let story = {};           // ストーリーの すすみ（STORY_KEY）
+  let mode = 'challenge';   // 'story' | 'challenge'
   let busy = true;
   let selected = null;
   let uid = 0;
@@ -566,6 +595,7 @@
   function startStage(board) {
     busy = true;
     selected = null;
+    typeCount = rules(level).types;
     score = 0;
     moves = 0;
     rescued = 0;
@@ -608,14 +638,16 @@
     const placed = addBlockers(Math.max(0, foesFor(level) - onBoard));
 
     // いちばん すすんだ レベルなら、はじめの ばんを ほぞん（とじて ひらいても この ばんから）
-    const p = progOf(diffKey);
+    const p = curProg();
     if (p.level === level) {
       p.board = { level, cells: snapshot() };
-      saveProgress();
+      saveCur();
     }
     updateHud();
-    bignews('レベル ' + level);
-    say(movesLeft + 'て で ' + levelQuota(level) + 'ひき にがすニャ！' + (placed ? '（' + placed + 'が やってきたニャ）' : ''));
+    bignews(levelName(level));
+    const info = mode === 'story' && innerOf(level) === 1 ? stageInfo(faceOf(level)) : null;
+    say((info ? info.name + '：' : '') +
+      movesLeft + 'て で ' + levelQuota(level) + 'ひき にがすニャ！' + (placed ? '（' + placed + 'が やってきたニャ）' : ''));
     busy = false;
     // ひきついだ ばんで うごかせる てが なければ ならびなおす
     if (keep && !hasMove(typeGrid()) && !anyItem()) {
@@ -643,10 +675,36 @@
     return b && b.level === lv ? b.cells : null;
   }
 
+  /** いまの モードの レベル lv を はじめる ときに ひきつぐ ばん */
+  function savedBoardCur(lv) {
+    if (mode !== 'story') return savedBoard(diffKey, lv);
+    const b = storyProg().board;
+    return b && b.level === lv ? b.cells : null;
+  }
+
+  /** レベル n の きまり：{ types, quota, foes, max, wolf }（モードで かわる） */
+  function rules(n) {
+    if (mode === 'story') {
+      const face = STORY_PLAN[Math.min(STORY_PLAN.length, Math.max(1, faceOf(n))) - 1];
+      const i = innerOf(n) - 1;
+      const quota = Math.max(10, Math.round(RATE_BY_TYPES[face.types] * MOVES * face.tight[i] / 5) * 5);
+      return { types: face.types, quota, foes: face.foes[i], max: face.foes[i], wolf: face.wolf };
+    }
+    const diff = DIFFS[diffKey];
+    const tight = Math.min(GOAL_TOP, GOAL_START + GOAL_STEP * (n - 1));
+    const foes = n < diff.foeFrom ? 0 : Math.min(diff.max, 1 + Math.floor((n - diff.foeFrom) / diff.foeEvery));
+    return {
+      types: diff.types,
+      quota: Math.max(10, Math.round(diff.rate * MOVES * tight / 5) * 5),
+      foes,
+      max: diff.max,
+      wolf: n >= diff.wolfFrom ? 0.5 : 0,
+    };
+  }
+
   /** そのレベルで にがす かず */
   function levelQuota(n) {
-    const tight = Math.min(GOAL_TOP, GOAL_START + GOAL_STEP * (n - 1));
-    return Math.max(10, Math.round(DIFFS[diffKey].rate * MOVES * tight / 5) * 5);
+    return rules(n).quota;
   }
 
   /** そのレベルの て数 */
@@ -656,9 +714,7 @@
 
   /** そのレベルの はじめに いる じゃまものの かず */
   function foesFor(n) {
-    const diff = DIFFS[diffKey];
-    if (n < diff.foeFrom) return 0;
-    return Math.min(diff.max, 1 + Math.floor((n - diff.foeFrom) / diff.foeEvery));
+    return rules(n).foes;
   }
 
   /** にがした ねこを かぞえる */
@@ -693,7 +749,63 @@
   }
 
   function totalStars(dk) {
-    return Object.values(progOf(dk).stars).reduce((a, b) => a + (Number(b) || 0), 0);
+    return sumStars(progOf(dk).stars);
+  }
+
+  function sumStars(stars) {
+    return Object.values(stars).reduce((a, b) => a + (Number(b) || 0), 0);
+  }
+
+  /* ----- ストーリーの すすみ（チャレンジの ほぞんとは まぜない） ----- */
+
+  function loadStory() {
+    try { story = JSON.parse(localStorage.getItem(STORY_KEY)) || {}; } catch (e) { story = {}; }
+    if (typeof story !== 'object' || Array.isArray(story)) story = {};
+  }
+
+  function saveStory() {
+    try { localStorage.setItem(STORY_KEY, JSON.stringify(story)); } catch (e) { /* つづける */ }
+  }
+
+  function storyProg() {
+    if (!(story.level >= 1)) story.level = 1;
+    story.level = Math.min(STORY_LAST + 1, Math.floor(story.level));
+    if (!story.stars || typeof story.stars !== 'object' || Array.isArray(story.stars)) story.stars = {};
+    story.seenPrologue = !!story.seenPrologue;
+    return story;
+  }
+
+  /** いまの モードの すすみ（どちらも { level, stars, board } の かたち） */
+  function curProg() {
+    return mode === 'story' ? storyProg() : progOf(diffKey);
+  }
+
+  function saveCur() {
+    if (mode === 'story') saveStory(); else saveProgress();
+  }
+
+  function curStars() {
+    return mode === 'story' ? sumStars(storyProg().stars) : totalStars(diffKey);
+  }
+
+  /** STORY.stages の 面の じょうほう（{ name, bg, boss }。なければ null） */
+  function stageInfo(face) {
+    const S = window.STORY;
+    const info = S && Array.isArray(S.stages) ? S.stages[face - 1] : null;
+    return info && typeof info === 'object' && info.name ? info : null;
+  }
+
+  /** レベルの よびかた：ストーリーは「3面-2」、チャレンジは「レベル 5」 */
+  function levelName(n) {
+    return mode === 'story' ? faceOf(n) + '面-' + innerOf(n) : 'レベル ' + n;
+  }
+
+  /** タイトル画面の ストーリーの ボタンの 下に 出す ことば */
+  function storyNote() {
+    const p = storyProg();
+    if (p.level > STORY_LAST) return 'クリアずみ ★' + sumStars(p.stars);
+    if (p.level === 1 && !p.seenPrologue) return 'はじめから';
+    return faceOf(p.level) + '面 レベル' + innerOf(p.level) + ' から';
   }
 
   /** 1て おわる ごとに よぶ。クリアか、て が なくなったら おしまい。 */
@@ -717,31 +829,40 @@
     score += bonus;
     updateHud();
 
-    const p = progOf(diffKey);
+    const p = curProg();
     p.stars[level] = Math.max(Number(p.stars[level]) || 0, stars);
     p.level = Math.max(p.level, level + 1);
-    if (p.level === level + 1) p.board = { level: level + 1, cells: snapshot() };
-    saveProgress();
+    if (p.level === level + 1) {
+      // ストーリーで 面が かわる ときは あたらしい ばんから（場所が かわる）
+      const newFace = mode === 'story' && innerOf(level) === PER_FACE;
+      p.board = newFace ? null : { level: level + 1, cells: snapshot() };
+    }
+    saveCur();
 
-    endTitle.textContent = 'レベル ' + level + ' クリア！';
+    const faceEnd = mode === 'story' && innerOf(level) === PER_FACE;
+    const info = faceEnd ? stageInfo(faceOf(level)) : null;
+    endTitle.textContent = faceEnd
+      ? faceOf(level) + '面 クリア！'
+      : levelName(level) + ' クリア！';
     endStars.textContent = '★'.repeat(stars) + '☆'.repeat(3 - stars);
     endStars.hidden = false;
-    endText.textContent = rescued + 'ひき にがした！\n' +
+    endText.textContent = (info ? info.name + 'の ねこを たすけた！\n' : '') +
+      rescued + 'ひき にがした！\n' +
       'のこり ' + movesLeft + 'て ボーナス +' + bonus + '\n' +
-      'とくてん ' + score + '　／　ほし ぜんぶで ★' + totalStars(diffKey);
-    endNextTxt.textContent = 'つぎの レベルへ';
+      'とくてん ' + score + '　／　ほし ぜんぶで ★' + curStars();
+    endNextTxt.textContent = mode === 'story' ? 'つぎへ' : 'つぎの レベルへ';
     endNext.dataset.go = 'next';
-    say('レベル ' + level + ' クリア！ よく がんばったニャ');
+    say(levelName(level) + ' クリア！ よく がんばったニャ');
     setTimeout(() => { endModal.hidden = false; endNext.focus(); }, 500);
   }
 
   function stageFail() {
     busy = true;
     const left = levelQuota(level) - rescued;
-    const p = progOf(diffKey);
+    const p = curProg();
     if (p.level === level) {
       p.board = { level, cells: snapshot() };
-      saveProgress();
+      saveCur();
     }
     endTitle.textContent = 'て が なくなったニャ';
     endStars.hidden = true;
@@ -756,20 +877,130 @@
   function rest() {
     endModal.hidden = true;
     busy = true;
-    const next = progOf(diffKey).level;
-    restText.textContent = 'つぎは レベル ' + next + ' から あそべるニャ。\nまた きてニャ〜';
+    // ストーリーで 面の さいごを クリアした ときは、先に その面の おわりの ストーリーを 見る
+    if (mode === 'story' && endNext.dataset.go === 'next' && innerOf(level) === PER_FACE) {
+      if (level >= STORY_LAST) { storyNext(); return; }
+      playScene('clear' + faceOf(level), showRest);
+      return;
+    }
+    showRest();
+  }
+
+  function showRest() {
+    const next = curProg().level;
+    restText.textContent = 'つぎは ' + (mode === 'story' ? faceOf(next) + '面 レベル' + innerOf(next) : 'レベル ' + next) +
+      ' から あそべるニャ。\nまた きてニャ〜';
     restEl.hidden = false;
     say('おつかれさまニャ 🐾');
   }
 
+  /* ----- ストーリーの ながれ ----- */
+
+  /** StoryPlayer が あるか（story.js が ない・よみこめない ときは チャレンジだけ） */
+  function hasPlayer() {
+    return typeof window.StoryPlayer !== 'undefined' && !!window.StoryPlayer &&
+      typeof window.StoryPlayer.showTitle === 'function';
+  }
+
+  /** 場面を 再生して done を よぶ。StoryPlayer や 場面が なければ すぐ done */
+  function playScene(sceneKey, done) {
+    const SP = window.StoryPlayer;
+    let called = false;
+    const once = () => { if (!called) { called = true; done(); } };
+    try {
+      if (SP && typeof SP.play === 'function' && (typeof SP.has !== 'function' || SP.has(sceneKey))) {
+        SP.play(sceneKey, once);
+        return;
+      }
+    } catch (e) { /* 再生できなくても すすむ */ }
+    once();
+  }
+
+  /** タイトル画面を 出す */
+  function showTitle() {
+    if (!hasPlayer()) { enterChallenge(); return; }
+    busy = true;
+    selectTile(null);
+    endModal.hidden = true;
+    kindModal.hidden = true;
+    restEl.hidden = true;
+    window.StoryPlayer.showTitle({ storyNote: storyNote(), onStory: enterStory, onChallenge: enterChallenge });
+  }
+
+  /** 下の ボタンを モードに あわせる */
+  function applyMode() {
+    document.body.dataset.mode = mode;
+    kindBtn.hidden = mode === 'story';
+    titleBtn.hidden = mode !== 'story';
+    toTitleBtn.hidden = !hasPlayer();
+  }
+
+  function enterChallenge() {
+    mode = 'challenge';
+    applyMode();
+    level = progOf(diffKey).level;   // つづきから
+    startStage(savedBoard(diffKey, level));
+  }
+
+  function enterStory() {
+    mode = 'story';
+    applyMode();
+    busy = true;
+    const p = storyProg();
+    if (p.level > STORY_LAST) {       // ぜんぶ クリアした あとは はじめから（ほしは のこす）
+      p.level = 1;
+      p.board = null;
+      p.seenPrologue = false;
+      saveStory();
+    }
+    level = p.level;
+    const go = () => beginStoryLevel(savedBoardCur(level));
+    if (!p.seenPrologue) {
+      playScene('prologue', () => {
+        p.seenPrologue = true;
+        saveStory();
+        go();
+      });
+    } else {
+      go();
+    }
+  }
+
+  /** ストーリーの レベルを はじめる。面の 1レベル目なら 先に stageN を 見る */
+  function beginStoryLevel(board) {
+    busy = true;
+    if (innerOf(level) === 1) playScene('stage' + faceOf(level), () => startStage(board));
+    else startStage(board);
+  }
+
+  /** ストーリーで クリアした あとの「つぎへ」 */
+  function storyNext() {
+    endModal.hidden = true;
+    busy = true;
+    const done = level;
+    if (innerOf(done) !== PER_FACE) {
+      level = done + 1;
+      startStage(snapshot());   // 面の なかは ばんを ひきつぐ
+      return;
+    }
+    playScene('clear' + faceOf(done), () => {
+      if (done >= STORY_LAST) {
+        playScene('ending', showTitle);
+        return;
+      }
+      level = done + 1;
+      beginStoryLevel(null);    // あたらしい 面は あたらしい ばん
+    });
+  }
+
   /** じゃまものを ばんに おく（さいだい数まで）。おいた ものの 名前を かえす。 */
   function addBlockers(count) {
-    const diff = DIFFS[diffKey];
+    const rule = rules(level);
     let placed = null;
     for (let i = 0; i < count; i++) {
       let onBoard = 0;
       eachTile((tile) => { if (tile.blocker) onBoard++; });
-      if (onBoard >= diff.max) break;
+      if (onBoard >= rule.max) break;
 
       // ねこ（どうぐでない）マスの なかから、はしに よりすぎない ところを えらぶ
       const spots = [];
@@ -781,7 +1012,7 @@
       }
       if (!spots.length) break;
 
-      const kind = level >= diff.wolfFrom && rand(2) ? 'wolf' : 'dog';
+      const kind = Math.random() < rule.wolf ? 'wolf' : 'dog';
       const target = spots[rand(spots.length)];
       makeBlocker(target, kind);
       target.el.animate(
@@ -797,7 +1028,7 @@
 
   function updateHud() {
     scoreEl.textContent = String(score);
-    levelEl.textContent = 'レベル ' + level;
+    levelEl.textContent = levelName(level);
     const quota = levelQuota(level);
     gaugeEl.style.width = Math.min(100, Math.round(rescued / quota * 100)) + '%';
     quotaEl.textContent = rescued >= quota
@@ -1327,12 +1558,26 @@
   resetBtn.addEventListener('click', () => {
     if (!busy || !restEl.hidden || !endModal.hidden) startStage();
   });
+  titleBtn.addEventListener('click', () => {
+    if (!busy || !restEl.hidden || !endModal.hidden) showTitle();
+  });
+  toTitleBtn.addEventListener('click', () => {
+    kindModal.hidden = true;
+    showTitle();
+  });
   endNext.addEventListener('click', () => {
+    if (mode === 'story' && endNext.dataset.go === 'next') { storyNext(); return; }
     if (endNext.dataset.go === 'next') level += 1;
     startStage(snapshot());   // いまの ばんを そのまま ひきつぐ
   });
   endRest.addEventListener('click', rest);
   restBtn.addEventListener('click', () => {
+    if (mode === 'story') {
+      restEl.hidden = true;
+      level = storyProg().level;
+      beginStoryLevel(savedBoardCur(level));
+      return;
+    }
     level = progOf(diffKey).level;
     startStage(savedBoard(diffKey, level));
   });
@@ -1352,7 +1597,10 @@
     }
   } catch (e) { setDiff('normal'); }
 
+  loadStory();
   loadImages();
-  level = progOf(diffKey).level;   // つづきから
-  startStage(savedBoard(diffKey, level));
+  applyMode();
+  // StoryPlayer が あれば タイトル画面から。なければ いままでどおり チャレンジで はじめる
+  if (hasPlayer()) showTitle();
+  else enterChallenge();
 })();

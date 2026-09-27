@@ -17,6 +17,7 @@
   --c-again:       #c65a00;   /* はじめから：オレンジ */
   --c-kind:        #1f7a3d;   /* ねこの かず：みどり */
   --c-close:       #444c55;
+  --c-title:       #2f5d8a;   /* タイトルへ：あお */
   --c-ok:          #1f7a3d;
   --c-accent:      #ffe36e;
 
@@ -467,6 +468,8 @@ body {
 
 .btn--again { background: var(--c-again); }
 .btn--kind  { background: var(--c-kind); }
+.btn--title { background: var(--c-title); }
+.btn[hidden] { display: none; }
 
 .btn--close {
   background: var(--c-close);
