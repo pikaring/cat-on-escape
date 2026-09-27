@@ -223,9 +223,9 @@ const BLOCKERS = {
 
 ```
 pip install pillow numpy
-python3 tools/make_icons.py        # 既定：nao-happy・fumi-happy・logo
+python3 tools/make_icons.py        # 既定：nao-happy・fumi-happy・assets/logo-icon.png（帯を 大きく した アイコン用の ロゴ）
 # 表情を変えるとき
-python3 tools/make_icons.py app/images/story/nao-normal.png app/images/story/fumi-happy.png app/images/story/logo.png
+python3 tools/make_icons.py app/images/story/nao-normal.png app/images/story/fumi-happy.png assets/logo-icon.png
 ```
 
 夕やけ色の角丸（こい緑のふち）に、上にロゴ、下にナオとフミの顔（フミが少し大きい）を重ねて、

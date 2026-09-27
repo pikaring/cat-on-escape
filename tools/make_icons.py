@@ -10,7 +10,10 @@
 つかいかた:
     python3 tools/make_icons.py [ナオの立ち絵] [フミの立ち絵] [ロゴ]
 例（なにも わたさなければ これ）:
-    python3 tools/make_icons.py app/images/story/nao-happy.png app/images/story/fumi-happy.png app/images/story/logo.png
+    python3 tools/make_icons.py app/images/story/nao-happy.png app/images/story/fumi-happy.png assets/logo-icon.png
+
+assets/logo-icon.png は タイトル画面の ロゴ（app/images/story/logo.png）の「〜cat on escape〜」の 帯を
+大きく した アイコン専用の ロゴ（アイコンは 小さいので 帯の 文字を タイトルの はばまで 広げて ある）。
 
 必要なもの: pillow, numpy （pip install pillow numpy）
 """
@@ -103,7 +106,7 @@ def main():
     args = sys.argv[1:]
     nao = args[0] if len(args) > 0 else 'app/images/story/nao-happy.png'
     fumi = args[1] if len(args) > 1 else 'app/images/story/fumi-happy.png'
-    logo = args[2] if len(args) > 2 else 'app/images/story/logo.png'
+    logo = args[2] if len(args) > 2 else 'assets/logo-icon.png'
     for p in (nao, fumi, logo):
         if not os.path.exists(p):
             print(f'× {p} が ありません')
