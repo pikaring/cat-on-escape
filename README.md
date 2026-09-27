@@ -159,7 +159,7 @@ const CAT_TYPES = [
 | `STAR2` / `STAR3` | 0.2 / 0.4 | ★2・★3になる残り手数の割合 |
 | `MOVE_BONUS` | 50 | クリア時の残り1手あたりのボーナス |
 | `BLOCKERS` | タコ hp2 / おおダコ hp3 | じゃまものの体力（絵は `TAKO_LOOKS` / `DAIOU_LOOK`） |
-| `SKIP_BUTTON` | `true` | ストーリーを確かめるための「とばす」ボタン（かり。公開まえに `false`） |
+| `SKIP_BUTTON` | `false` | ストーリーを確かめるための「とばす」ボタン（確かめるときだけ `true`） |
 | `DIFFS` | やさしい／ふつう／むずかしい | 猫の種類数・`rate`（1手で逃げる数のめやす）・タコの上限と出はじめ・おおダコが出るレベル |
 | `SWAP_MS` / `FALL_MS` | 170 / 260 | 入れかえ・落下のアニメ時間（ms） |
 | `RUN_MS` / `RUN_STAGGER` / `ESCAPE_HOLD` | 900 / 55 / 230 | 右へ走る時間・行列のずれ・盤を詰めはじめるまで（ms） |

@@ -78,7 +78,7 @@
    *  にげる ときは -down（やられた）の 絵に なる。 */
   const TAKO_LOOKS = [1, 2, 3, 4, 5, 6, 7].map((n) => 'images/story/tako' + n + '-normal.png');
   const DAIOU_LOOK = 'images/story/daiou-normal.png';
-  const SKIP_BUTTON = true;   // ストーリーを たしかめる ための「とばす」ボタン（かり。公開まえに false に）
+  const SKIP_BUTTON = false;  // ストーリーを たしかめる ための「とばす」ボタン（たしかめる ときだけ true に）
 
   /** じゃまもの。ねこでは ないので そろわず、おちても こない。
    *  となりで ねこが にげると よわって、たいりょくが 0に なると いなく なる。 */
