@@ -219,19 +219,19 @@ const BLOCKERS = {
 
 ## 4. アイコン
 
-アイコンは **ゲームに出ている猫の顔から作ります**（画像生成AIは使いません）。
+アイコンは **ナオとフミの立ち絵と、タイトルロゴから作ります**（画像生成AIは使いません）。
 
 ```
-pip install pillow
-python3 tools/make_icons.py app/images/face-chashiro.png
+pip install pillow numpy
+python3 tools/make_icons.py        # 既定：nao-happy・fumi-happy・logo
+# 表情を変えるとき
+python3 tools/make_icons.py app/images/story/nao-normal.png app/images/story/fumi-happy.png app/images/story/logo.png
 ```
 
-濃い緑の角丸に、右へ走る勢いの黄色い線と猫の顔を重ねて、
+夕やけ色の角丸（こい緑のふち）に、上にロゴ、下にナオとフミの顔（フミが少し大きい）を重ねて、
 `app/images/icon-32 / 180 / 192 / 512.png` と `assets/icon.png`（512px）・
-`assets/favicon.png`（64px）を書き出します。別の猫にしたいときは引数を変えるだけです。
-
-小さく表示したときの見やすさで選ぶなら、地の緑と差がつく **ちゃしろ・ハチワレ・みけ** が向いています
-（くろねこは緑に沈み、キジトラは32pxだとつぶれます）。
+`assets/favicon.png`（64px）を書き出します。
+64px 以下はロゴの文字がつぶれるので、ふたりの顔だけの図がらになります。
 
 ## 5. 英語版プロンプト（日本語でうまく出ないとき）
 
