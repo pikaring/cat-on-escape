@@ -70,23 +70,29 @@
   const ITEMS = {
     row:   { name: 'ねこじゃらし（よこ）', icon: '🪶', what: 'よこ一れつ',  image: 'images/tool-row.png' },
     col:   { name: 'ねこじゃらし（たて）', icon: '🪶', what: 'たて一れつ',  image: 'images/tool-col.png' },
-    bomb:  { name: 'けいとだま',           icon: '🧶', what: 'まわり3×3',  image: 'images/tool-bomb.png' },
+    bomb:  { name: 'けいとだま',           icon: '🧶', what: 'まわり5×5',  image: 'images/tool-bomb.png' },
     cross: { name: 'すず',                 icon: '🔔', what: 'ななめクロス', image: 'images/tool-cross.png' },
   };
+
+  /** じゃまものの 絵：ストーリーでは その面の タコ（8面は タコ大王）、チャレンジでは タコ一郎〜七郎の どれか。
+   *  にげる ときは -down（やられた）の 絵に なる。 */
+  const TAKO_LOOKS = [1, 2, 3, 4, 5, 6, 7].map((n) => 'images/story/tako' + n + '-normal.png');
+  const DAIOU_LOOK = 'images/story/daiou-normal.png';
+  const SKIP_BUTTON = true;   // ストーリーを たしかめる ための「とばす」ボタン（かり。公開まえに false に）
 
   /** じゃまもの。ねこでは ないので そろわず、おちても こない。
    *  となりで ねこが にげると よわって、たいりょくが 0に なると いなく なる。 */
   const BLOCKERS = {
-    dog:  { name: 'いぬ',     icon: '🐶', hp: 2, image: 'images/foe-dog.png' },
-    wolf: { name: 'おおかみ', icon: '🐺', hp: 3, image: 'images/foe-wolf.png' },
+    tako:   { name: 'タコ',   icon: '🐙', hp: 2 },
+    oodako: { name: 'おおダコ', icon: '🐙', hp: 3 },
   };
 
   /** むずかしさ。rate は 1てで にげる ねこの めやす（しゅるいが すくないほど れんさで たくさん にげる）。
    *  じゃまものは foeFrom の レベルから 1ぴき、そこから foeEvery レベルごとに 1ぴきずつ ふえる（max まで）。 */
   const DIFFS = {
-    easy:   { name: 'やさしい',   note: 'ねこ4しゅるい・じゃまもの なし', types: 4, rate: 12, max: 0, foeFrom: 99, foeEvery: 99, wolfFrom: 99 },
-    normal: { name: 'ふつう',     note: 'ねこ5しゅるい・いぬ さいだい2',  types: 5, rate: 7,  max: 2, foeFrom: 3, foeEvery: 3, wolfFrom: 8 },
-    hard:   { name: 'むずかしい', note: 'ねこ6しゅるい・じゃまもの さいだい3', types: 6, rate: 5,  max: 3, foeFrom: 2, foeEvery: 2, wolfFrom: 4 },
+    easy:   { name: 'やさしい',   note: 'ねこ4しゅるい・タコ なし', types: 4, rate: 12, max: 0, foeFrom: 99, foeEvery: 99, wolfFrom: 99 },
+    normal: { name: 'ふつう',     note: 'ねこ5しゅるい・タコ さいだい2',  types: 5, rate: 7,  max: 2, foeFrom: 3, foeEvery: 3, wolfFrom: 8 },
+    hard:   { name: 'むずかしい', note: 'ねこ6しゅるい・タコ さいだい3', types: 6, rate: 5,  max: 3, foeFrom: 2, foeEvery: 4, wolfFrom: 6 },
   };
 
   /* ---------------- ストーリーモード（全8面・24レベル、1面＝3レベル） ----------------
@@ -99,16 +105,17 @@
   const RATE_BY_TYPES = { 4: 12, 5: 7, 6: 5 };  // ねこの しゅるい数 → 1てで にげる ねこの めやす（DIFFS と おなじ）
 
   /** 面ごとの むずかしさ。tight は 面の なかの 3レベルの きつさ（めあて ＝ rate × MOVES × tight）、
-   *  foes は はじめに いる じゃまものの かず（その かずが さいだい）、wolf は じゃまものが おおかみに なる わりあい。 */
+   *  foes は はじめに いる タコの かず（その かずが さいだい）、wolf は タコが おおダコ（たいりょく 3）に なる わりあい。
+   *  タコは その面の タコ（1面 タコ一郎 … 8面 タコ大王）。ぜんぶ おいはらわないと クリアに ならない。 */
   const STORY_PLAN = [
-    { types: 4, tight: [0.40, 0.45, 0.50], foes: [0, 0, 0], wolf: 0 },    // 1面 通学路     めあて 70・80・90
-    { types: 4, tight: [0.55, 0.60, 0.65], foes: [0, 0, 0], wolf: 0 },    // 2面 商店街     100・110・115
-    { types: 5, tight: [0.55, 0.60, 0.65], foes: [1, 1, 1], wolf: 0 },    // 3面 路地裏     60・65・70（いぬ 1）
+    { types: 4, tight: [0.40, 0.45, 0.50], foes: [0, 0, 1], wolf: 0 },    // 1面 通学路     めあて 70・80・90（3レベル目に タコ一郎）
+    { types: 4, tight: [0.55, 0.60, 0.65], foes: [0, 0, 1], wolf: 0 },    // 2面 商店街     100・110・115（3レベル目に タコ二郎）
+    { types: 5, tight: [0.55, 0.60, 0.65], foes: [1, 1, 1], wolf: 0 },    // 3面 路地裏     60・65・70（タコ 1）
     { types: 5, tight: [0.62, 0.66, 0.70], foes: [1, 1, 2], wolf: 0 },    // 4面 公園       65・70・75
-    { types: 5, tight: [0.68, 0.72, 0.76], foes: [2, 2, 2], wolf: 0.3 },  // 5面 河川敷     70・75・80（おおかみも）
-    { types: 6, tight: [0.72, 0.78, 0.85], foes: [2, 2, 2], wolf: 0.4 },  // 6面 工場跡     55・60・65
-    { types: 6, tight: [0.80, 0.85, 0.87], foes: [2, 3, 3], wolf: 0.5 },  // 7面 トンネル   60・65・65
-    { types: 6, tight: [0.87, 0.92, 0.95], foes: [3, 3, 3], wolf: 0.6 },  // 8面 秘密基地   65・70・70
+    { types: 5, tight: [0.62, 0.66, 0.70], foes: [2, 2, 2], wolf: 0.3 },  // 5面 河川敷
+    { types: 6, tight: [0.62, 0.66, 0.72], foes: [2, 2, 2], wolf: 0.3 },  // 6面 工場跡
+    { types: 6, tight: [0.68, 0.72, 0.76], foes: [2, 2, 3], wolf: 0.4 },  // 7面 トンネル
+    { types: 6, tight: [0.66, 0.70, 0.74], foes: [2, 3, 3], wolf: 0.4 },  // 8面 秘密基地
   ];
 
   const faceOf = (n) => Math.ceil(n / PER_FACE);        // レベル n の 面
@@ -143,6 +150,7 @@
   const restText   = document.getElementById('restText');
   const restBtn    = document.getElementById('btnRestart');
   const levelOneBtn = document.getElementById('btnLevelOne');
+  const skipBtn    = document.getElementById('btnSkip');      // ストーリーを たしかめる ための「とばす」（かり）
   const titleBtn   = document.getElementById('btnTitle');     // ストーリーの 下の「タイトル」
   const toTitleBtn = document.getElementById('btnToTitle');   // むずかしさの 画面の「タイトルへ」
 
@@ -196,16 +204,49 @@
       };
       img.src = def.image;
     });
-    Object.values(BLOCKERS).forEach((def) => {
-      def.ready = false;
-      if (!def.image) return;
-      const img = new Image();
-      img.onload = () => {
-        def.ready = true;
-        eachTile((tile) => { if (tile.blocker) paint(tile); });
-      };
-      img.src = def.image;
+    [...TAKO_LOOKS, DAIOU_LOOK].forEach((url) => {
+      loadLook(url);
+      loadLook(downLook(url));
     });
+  }
+
+  /** じゃまものの 絵（読めた ものだけ つかう） */
+  const lookReady = {};
+  function loadLook(url) {
+    if (!url || url in lookReady) return;
+    lookReady[url] = false;
+    const img = new Image();
+    img.onload = () => {
+      lookReady[url] = true;
+      eachTile((tile) => { if (tile.blocker && tile.look === url) paint(tile); });
+    };
+    img.src = url;
+  }
+  function downLook(url) {
+    return String(url || '').replace('-normal.png', '-down.png');
+  }
+
+  /** あたらしい じゃまものの 絵を きめる */
+  function pickLook() {
+    if (mode === 'story') {
+      const info = stageInfo(faceOf(level));
+      const boss = info && info.boss;
+      if (boss === 'daiou') return DAIOU_LOOK;
+      const m = /^tako(\d)$/.exec(boss || '');
+      if (m) return TAKO_LOOKS[Number(m[1]) - 1];
+    }
+    return TAKO_LOOKS[rand(TAKO_LOOKS.length)];
+  }
+
+  /** じゃまものの 名前（ストーリーでは その面の タコの 名前） */
+  function foeName(tile) {
+    if (mode === 'story') {
+      const info = stageInfo(faceOf(level));
+      const S = window.STORY;
+      const c = info && S && S.cast && S.cast[info.boss];
+      if (c && c.name) return c.name;
+    }
+    return BLOCKERS[tile.blocker] ? BLOCKERS[tile.blocker].name : 'タコ';
   }
 
   /* ---------------- レイアウト ---------------- */
@@ -246,22 +287,24 @@
   }
 
   /** じゃまもの（いぬ・おおかみ）に する */
-  function makeBlocker(tile, kind) {
+  function makeBlocker(tile, kind, look) {
     tile.item = null;
     tile.blocker = kind;
+    tile.look = look || pickLook();
+    loadLook(tile.look);
     tile.hp = BLOCKERS[kind].hp;
     paint(tile);
     return tile;
   }
 
-  /** じゃまものの みためを つける（絵文字、または 顔の 画像） */
-  function dressFoe(el, kind) {
-    const def = BLOCKERS[kind];
+  /** じゃまものの みためを つける（タコの 絵、読めなければ 絵文字） */
+  function dressFoe(el, kind, look) {
+    const def = BLOCKERS[kind] || BLOCKERS.tako;
     el.className = 'cat__foe cat__foe--' + kind;
-    if (def.image && def.ready) {
+    if (look && lookReady[look]) {
       el.textContent = '';
       el.classList.add('cat__foe--image');
-      el.style.backgroundImage = 'url("' + def.image + '")';
+      el.style.backgroundImage = 'url("' + look + '")';
     } else {
       el.textContent = def.icon;
       el.style.backgroundImage = '';
@@ -292,7 +335,7 @@
         tile.badge = document.createElement('span');
         tile.el.appendChild(tile.badge);
       }
-      dressFoe(tile.badge, tile.blocker);
+      dressFoe(tile.badge, tile.blocker, tile.look);
       if (!tile.pips) {
         tile.pips = document.createElement('span');
         tile.pips.className = 'cat__hp';
@@ -304,7 +347,7 @@
         if (i < tile.hp) pip.className = 'is-on';
         tile.pips.appendChild(pip);
       }
-      tile.el.setAttribute('aria-label', def.name + '（あと' + tile.hp + '）');
+      tile.el.setAttribute('aria-label', foeName(tile) + '（あと' + tile.hp + '）');
       return;
     }
 
@@ -476,8 +519,8 @@
     } else if (tile.item === 'col') {
       for (let r = 0; r < ROWS; r++) cells.push(key(r, tile.c));
     } else if (tile.item === 'bomb') {
-      for (let r = tile.r - 1; r <= tile.r + 1; r++) {
-        for (let c = tile.c - 1; c <= tile.c + 1; c++) {
+      for (let r = tile.r - 2; r <= tile.r + 2; r++) {        // まわり 5×5
+        for (let c = tile.c - 2; c <= tile.c + 2; c++) {
           if (r >= 0 && r < ROWS && c >= 0 && c < COLS) cells.push(key(r, c));
         }
       }
@@ -614,10 +657,10 @@
       for (let c = 0; c < COLS; c++) {
         let tile;
         if (keep) {
-          const [type, item, blocker, hp] = board[r][c];
+          const [type, item, blocker, hp, look] = board[r][c];
           tile = createTile(type);
           if (blocker) {
-            makeBlocker(tile, blocker);
+            makeBlocker(tile, blocker, typeof look === 'string' && /^images\/story\/[a-z0-9-]+\.png$/.test(look) ? look : null);
             tile.hp = Math.max(1, Math.min(BLOCKERS[blocker].hp, hp));
             paint(tile);
           } else if (item) {
@@ -656,9 +699,9 @@
     }
   }
 
-  /** いまの ばんを ほぞんできる かたちに する：[しゅるい, どうぐ, じゃまもの, たいりょく] */
+  /** いまの ばんを ほぞんできる かたちに する：[しゅるい, どうぐ, じゃまもの, たいりょく, じゃまものの 絵] */
   function snapshot() {
-    return grid.map((row) => row.map((t) => [t.type, t.item || 0, t.blocker || 0, t.hp || 0]));
+    return grid.map((row) => row.map((t) => [t.type, t.item || 0, t.blocker || 0, t.hp || 0, t.look || 0]));
   }
 
   /** ほぞんした ばんが いまの むずかしさで つかえるか */
@@ -809,8 +852,16 @@
   }
 
   /** 1て おわる ごとに よぶ。クリアか、て が なくなったら おしまい。 */
+  function countFoes() {
+    let n = 0;
+    eachTile((tile) => { if (tile.blocker) n++; });
+    return n;
+  }
+
+  /** クリアは「めあての かずを にがす」と「タコを ぜんぶ おいはらう」の りょうほう */
   function checkStageEnd() {
-    if (rescued >= levelQuota(level)) {
+    updateHud();
+    if (rescued >= levelQuota(level) && !countFoes()) {
       stageClear();
       return true;
     }
@@ -858,7 +909,8 @@
 
   function stageFail() {
     busy = true;
-    const left = levelQuota(level) - rescued;
+    const left = Math.max(0, levelQuota(level) - rescued);
+    const foesLeft = countFoes();
     const p = curProg();
     if (p.level === level) {
       p.board = { level, cells: snapshot() };
@@ -866,10 +918,12 @@
     }
     endTitle.textContent = 'て が なくなったニャ';
     endStars.hidden = true;
-    endText.textContent = 'あと ' + left + 'ひき だったニャ。\nもういちど やってみるニャ？';
+    const miss = [left ? 'ねこ あと ' + left + 'ひき' : '', foesLeft ? 'タコ あと ' + foesLeft + 'ひき' : '']
+      .filter(Boolean).join('、');
+    endText.textContent = miss + ' だったニャ。\nもういちど やってみるニャ？';
     endNextTxt.textContent = 'もういちど';
     endNext.dataset.go = 'retry';
-    say('あと ' + left + 'ひき だったニャ…');
+    say(miss + ' だったニャ…');
     setTimeout(() => { endModal.hidden = false; endNext.focus(); }, 500);
   }
 
@@ -932,6 +986,7 @@
     document.body.dataset.mode = mode;
     kindBtn.hidden = mode === 'story';
     titleBtn.hidden = mode !== 'story';
+    skipBtn.hidden = !(SKIP_BUTTON && mode === 'story');
     toTitleBtn.hidden = !hasPlayer();
   }
 
@@ -1012,7 +1067,7 @@
       }
       if (!spots.length) break;
 
-      const kind = Math.random() < rule.wolf ? 'wolf' : 'dog';
+      const kind = Math.random() < rule.wolf ? 'oodako' : 'tako';
       const target = spots[rand(spots.length)];
       makeBlocker(target, kind);
       target.el.animate(
@@ -1021,7 +1076,7 @@
          { transform: target.el.style.transform + ' scale(1)', opacity: 1 }],
         { duration: 420, easing: 'ease-out' }
       );
-      placed = BLOCKERS[kind].name;
+      placed = foeName(target);
     }
     return placed;
   }
@@ -1031,7 +1086,10 @@
     levelEl.textContent = levelName(level);
     const quota = levelQuota(level);
     gaugeEl.style.width = Math.min(100, Math.round(rescued / quota * 100)) + '%';
-    quotaEl.textContent = rescued >= quota
+    const foes = countFoes();
+    quotaEl.textContent = rescued >= quota && foes
+      ? 'もくひょう たっせい！ あとは タコを ' + foes + 'ひき おいはらう'
+      : rescued >= quota
       ? 'もくひょう たっせい！'
       : 'あと ' + (quota - rescued) + 'ひき にがすと クリア';
     movesEl.textContent = 'のこり ' + movesLeft + 'て';
@@ -1070,7 +1128,7 @@
     } else if (kind === 'col') {
       make({ left: px(c * cell), top: '0', width: px(cell), height: px(ROWS * cell) });
     } else if (kind === 'bomb') {
-      make({ left: px((c - 1) * cell), top: px((r - 1) * cell), width: px(3 * cell), height: px(3 * cell), borderRadius: px(cell / 2) });
+      make({ left: px((c - 2) * cell), top: px((r - 2) * cell), width: px(5 * cell), height: px(5 * cell), borderRadius: px(cell) });
     } else if (kind === 'cross') {
       const long = (COLS + ROWS) * cell;
       [45, -45].forEach((deg) => make({
@@ -1100,7 +1158,13 @@
       runner.style.animationDelay = (i * RUN_STAGGER) + 'ms';
 
       const body = document.createElement('div');
-      if (tile.item) {
+      if (tile.blocker) {                                   // おいはらった タコは やられた 顔で にげる
+        const down = downLook(tile.look);
+        const look = lookReady[down] ? down : (lookReady[tile.look] ? tile.look : '');
+        body.className = 'cat__body cat__body--tool';
+        if (look) body.style.backgroundImage = 'url("' + look + '")';
+        else body.textContent = BLOCKERS[tile.blocker] ? BLOCKERS[tile.blocker].icon : '🐙';
+      } else if (tile.item) {
         const def = ITEMS[tile.item];
         body.className = 'cat__body cat__body--tool';
         if (def.image && def.ready) {
@@ -1224,7 +1288,9 @@
     updateHud();
 
     if (beaten) {
-      say(beaten === 1 ? 'じゃまものを おいはらった！' : 'じゃまものを ' + beaten + 'ひき おいはらった！');
+      const left = countFoes() - beaten;   // おいはらった タコは まだ 盤に いる（このあと にげる）
+      say((beaten === 1 ? 'タコを おいはらった！' : 'タコを ' + beaten + 'ひき おいはらった！') +
+        (left ? '（あと ' + left + 'ひき）' : ''));
     } else if (used.length) {
       const what = [...new Set(used.map((u) => ITEMS[u.kind].what))].join('と');
       say(what + 'が にげた！');
@@ -1369,7 +1435,7 @@
     if (a.blocker || b.blocker) {
       const foe = a.blocker ? a : b;
       selectTile(null);
-      say(BLOCKERS[foe.blocker].name + 'は うごかないニャ。そばで ねこを にがすニャ！');
+      say(foeName(foe) + 'は うごかないニャ。そばで ねこを にがすニャ！');
       foe.el.classList.add('is-nope');
       setTimeout(() => foe.el.classList.remove('is-nope'), 260);
       return;
@@ -1501,7 +1567,7 @@
       }
       if (diff.max) {
         const foe = document.createElement('span');
-        dressFoe(foe, diff.wolfFrom <= 3 ? 'wolf' : 'dog');
+        dressFoe(foe, 'tako', TAKO_LOOKS[3]);
         foe.classList.add('cat-choice__foe');
         sample.appendChild(foe);
       }
@@ -1555,6 +1621,18 @@
   kindModal.addEventListener('click', (e) => { if (e.target === kindModal) kindModal.hidden = true; });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') kindModal.hidden = true; });
 
+  // （かり）いまの レベルを すぐ クリア あつかいに して、つぎの ストーリーへ すすむ
+  skipBtn.addEventListener('click', () => {
+    if (busy || mode !== 'story') return;
+    rescued = Math.max(rescued, levelQuota(level));
+    eachTile((tile) => {
+      if (!tile.blocker) return;
+      tile.blocker = null; tile.look = null; tile.hp = 0;
+      if (tile.badge) { tile.badge.remove(); tile.badge = null; }
+      paint(tile);
+    });
+    checkStageEnd();
+  });
   resetBtn.addEventListener('click', () => {
     if (!busy || !restEl.hidden || !endModal.hidden) startStage();
   });

@@ -468,6 +468,11 @@ body {
 
 .btn--again { background: var(--c-again); }
 .btn--kind  { background: var(--c-kind); }
+.btn--skip  { background: #7a5ea8; }   /* ストーリーを たしかめる ための「とばす」（かり） */
+
+/* ボタンが 3つ ならぶ ときは 文字を ちいさく して 折りかえさない */
+.actions:has(.btn--skip:not([hidden])) .btn { font-size: calc(var(--fs-button) * .78); }
+.actions:has(.btn--skip:not([hidden])) .btn__text { white-space: nowrap; }
 .btn--title { background: var(--c-title); }
 .btn[hidden] { display: none; }
 
